@@ -3,8 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:app_usage/app_usage.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:convert';
@@ -19,9 +17,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final DeviceInfoPlugin _deviceInfoPlugin = DeviceInfoPlugin();
-  Map<String, dynamic> _deviceData = <String, dynamic>{};
-  List<AppUsageInfo> _appUsageList = [];
   Timer? _refreshTimer;
 
   // For Discord lanyard data
@@ -34,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _initDeviceInfo();
     _initPermissions();
     _startPeriodicRefresh();
 
@@ -51,66 +45,60 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<void> _initDeviceInfo() async {
-    try {
-      if (Theme.of(context).platform == TargetPlatform.android) {
-        _deviceData =
-            _readAndroidBuildData(await _deviceInfoPlugin.androidInfo);
-      } else {
-        _deviceData = <String, dynamic>{
-          'error': 'This app is optimized for Android devices'
-        };
-      }
-    } catch (e) {
-      _deviceData = <String, dynamic>{
-        'Error': 'Failed to get device info: $e',
-      };
-    }
-
-    if (mounted) setState(() {});
-  }
-
-  Map<String, dynamic> _readAndroidBuildData(AndroidDeviceInfo build) {
-    return <String, dynamic>{
-      'brand': build.brand,
-      'device': build.device,
-      'manufacturer': build.manufacturer,
-      'model': build.model,
-      'product': build.product,
-      'androidVersion': build.version.release,
-      'sdkInt': build.version.sdkInt,
-      'hardware': build.hardware,
-      'isPhysicalDevice': build.isPhysicalDevice,
-    };
-  }
-
   Future<void> _initPermissions() async {
     var usageStatus = await Permission.appTrackingTransparency.request();
-    if (usageStatus.isGranted) {
-      await _getAppUsage();
-    }
+    if (usageStatus.isGranted) {}
 
     await _fetchDiscordData();
   }
 
-  Future<void> _getAppUsage() async {
-    try {
-      DateTime endDate = DateTime.now();
-      DateTime startDate = endDate.subtract(const Duration(minutes: 30));
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Snooper'),
+        scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _fetchDiscordData();
+            },
+          ),
+        ],
+      ),
+      drawer: SonnerDrawer(),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await _fetchDiscordData();
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            const SizedBox(height: 24),
+            Text(
+              'Discord Activity',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
 
-      List<AppUsageInfo> infoList =
-          await AppUsage().getAppUsage(startDate, endDate);
+            // Discord Activity
+            if (_isLoadingDiscord)
+              _buildLoadingCard('Loading Discord activity...')
+            else if (_hasDiscordError)
+              _buildErrorCard('Failed to load Discord data')
+            else if (_discordData != null)
+              _buildDiscordActivities()
+            else
+              _buildErrorCard('No Discord data available'),
 
-      // Sort by most recently used
-      infoList.sort((a, b) => b.endDate.compareTo(a.endDate));
-
-      setState(() {
-        _appUsageList =
-            infoList.take(10).toList(); // Show top 10 most recent apps
-      });
-    } catch (e) {
-      print('Failed to get app usage: $e');
-    }
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _fetchDiscordData() async {
@@ -147,7 +135,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _startPeriodicRefresh() {
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      _getAppUsage();
       _fetchDiscordData();
     });
   }
@@ -220,139 +207,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final phase = index * 0.25;
     final t = (_waveController.value + phase) % 1.0;
     return 0.5 * (1 + sin(2 * 3.14159 * t));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Snooper'),
-        scrolledUnderElevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _getAppUsage();
-              _fetchDiscordData();
-            },
-          ),
-        ],
-      ),
-      drawer: SonnerDrawer(),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await _getAppUsage();
-          await _fetchDiscordData();
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            // Device info card
-            Card(
-              elevation: 0,
-              color: colorScheme.secondaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.smartphone, color: colorScheme.secondary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Device Info',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: colorScheme.secondary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_deviceData.isNotEmpty) ...[
-                      _deviceInfoRow('Model',
-                          '${_deviceData['manufacturer']} ${_deviceData['model']}'),
-                      _deviceInfoRow('Android',
-                          '${_deviceData['androidVersion']} (SDK ${_deviceData['sdkInt']})'),
-                      _deviceInfoRow('Device', '${_deviceData['device']}'),
-                    ] else ...[
-                      const Center(child: CircularProgressIndicator()),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            Text(
-              'Discord Activity',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-
-            // Discord Activity
-            if (_isLoadingDiscord)
-              _buildLoadingCard('Loading Discord activity...')
-            else if (_hasDiscordError)
-              _buildErrorCard('Failed to load Discord data')
-            else if (_discordData != null)
-              _buildDiscordActivities()
-            else
-              _buildErrorCard('No Discord data available'),
-
-            const SizedBox(height: 24),
-            Text(
-              'Recent Applications',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-
-            // App usage list
-            if (_appUsageList.isEmpty)
-              _buildInfoCard('No recent apps detected or permission denied'),
-
-            for (final appInfo in _appUsageList) _buildAppUsageCard(appInfo),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _deviceInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildDiscordActivities() {
@@ -704,71 +558,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAppUsageCard(AppUsageInfo appInfo) {
-    final duration = appInfo.usage;
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    final durationText = minutes > 0
-        ? '$minutes min ${seconds > 0 ? '$seconds sec' : ''}'
-        : '${duration.inSeconds} sec';
-
-    // Format time ago
-    final timeAgo = DateTime.now().difference(appInfo.endDate);
-    final timeAgoText = timeAgo.inMinutes < 1
-        ? 'just now'
-        : timeAgo.inMinutes == 1
-            ? '1 minute ago'
-            : '${timeAgo.inMinutes} minutes ago';
-
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 1,
-        ),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.apps,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        title: Text(
-          appInfo.appName.split('.').last,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text('Used for $durationText'),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              timeAgoText,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoadingCard(String message) {
     return Card(
       elevation: 0,
@@ -814,29 +603,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: Theme.of(context).colorScheme.onErrorContainer,
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String message) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(message),
             ),
           ],
         ),
