@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:snooper/app/widgets/activity_container.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../widgets/activity.dart';
 import '../widgets/drawer.dart';
 import '../widgets/friend_widgets.dart';
+import '../widgets/user_setting.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,18 +23,33 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasDiscordError = false;
   List<DiscordFriend> _friends = [];
   final Map<String, dynamic> _friendsData = {};
+  String _currentUserId = "878728452155539537"; // Default user ID
 
   @override
   void initState() {
     super.initState();
-    _fetchDiscordData();
-    _startPeriodicRefresh();
+    _loadSavedUserId();
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadSavedUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUserId = prefs.getString('discord_user_id');
+
+    if (savedUserId != null && savedUserId.isNotEmpty) {
+      setState(() {
+        _currentUserId = savedUserId;
+      });
+    }
+
+    // Start data fetching after loading the user ID
+    _fetchDiscordData();
+    _startPeriodicRefresh();
   }
 
   Future<void> _fetchDiscordData() async {
@@ -43,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://api.lanyard.rest/v1/users/878728452155539537'),
+        Uri.parse('https://api.lanyard.rest/v1/users/$_currentUserId'),
       );
 
       if (response.statusCode == 200) {
@@ -90,6 +107,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _handleUserIdChanged(String userId) {
+    setState(() {
+      _currentUserId = userId;
+    });
+
+    // Refresh data with new user ID
+    _fetchDiscordData();
+  }
+
   void _handleFriendsChanged(List<DiscordFriend> friends) {
     setState(() {
       _friends = friends;
@@ -130,8 +156,18 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            DiscordActivityContainer(userId: "878728452155539537"),
+            // User Settings component
+            DiscordProfileCard(
+              currentUserId: _currentUserId,
+              onUserIdChanged: _handleUserIdChanged,
+            ),
+
+            const SizedBox(height: 16),
+
+            DiscordActivityContainer(userId: _currentUserId),
+
             const SizedBox(height: 24),
+
             Text(
               'Discord Activity',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -139,10 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
             ),
             const SizedBox(height: 8),
-            ActivityRenderer(
-              discordData: _discordData ?? {},
-              username: _discordData?['discord_user']['username'] ?? 'User',
-            ),
+
             const SizedBox(height: 24),
 
             // Friends Management component
