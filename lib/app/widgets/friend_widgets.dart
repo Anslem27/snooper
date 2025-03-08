@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snooper/app/screens/home.dart';
 import 'dart:convert';
+
+import '../models/discord_friend.dart';
 
 class FriendsManagement extends StatefulWidget {
   final Function(List<DiscordFriend>) onFriendsChanged;
@@ -48,7 +51,7 @@ class _FriendsManagementState extends State<FriendsManagement> {
       // Notify parent about loaded friends
       widget.onFriendsChanged(_friends);
     } catch (e) {
-      print('Error loading friends: $e');
+      logger.e('Error loading friends: $e');
     }
   }
 
@@ -62,9 +65,13 @@ class _FriendsManagementState extends State<FriendsManagement> {
   void _addFriend() {
     if (_idController.text.isEmpty || _nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please enter both ID and name'),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: EdgeInsets.all(10),
         ),
       );
       return;
@@ -222,30 +229,6 @@ class _FriendsManagementState extends State<FriendsManagement> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class DiscordFriend {
-  final String id;
-  final String name;
-
-  DiscordFriend({
-    required this.id,
-    required this.name,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-    };
-  }
-
-  factory DiscordFriend.fromJson(Map<String, dynamic> json) {
-    return DiscordFriend(
-      id: json['id'],
-      name: json['name'],
     );
   }
 }

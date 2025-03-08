@@ -26,6 +26,8 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
   late TextEditingController _userIdController;
   bool _isEditing = false;
   bool _isLoading = false;
+  bool showUserActivitiesInCard = false;
+  bool showBanner = false;
   Map<String, dynamic>? _userData;
   String? _errorMessage;
   Timer? _refreshTimer;
@@ -127,7 +129,14 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
     final newId = _userIdController.text.trim();
     if (newId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid Discord ID')),
+        SnackBar(
+          content: Text('Please enter a valid Discord ID'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: EdgeInsets.all(10),
+        ),
       );
       return;
     }
@@ -232,7 +241,7 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
     final user = _userData!;
     final discordUser = user['discord_user'] ?? {};
     final username = discordUser['username'] ?? 'Unknown User';
-    final discriminator = discordUser['discriminator'] ?? '0000';
+    // final discriminator = discordUser['discriminator'] ?? '0000';
     final avatarHash = discordUser['avatar'] ?? '';
     final status = user['discord_status'] ?? 'offline';
     final activities = (user['activities'] as List?) ?? [];
@@ -249,15 +258,16 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // User banner
-        Container(
-          height: 80,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(12),
+        if (showBanner)
+          Container(
+            height: 80,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
             ),
           ),
-        ),
 
         // Profile section
         Container(
@@ -345,7 +355,7 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
               const SizedBox(height: 16),
 
               // Activities
-              if (activities.isNotEmpty) ...[
+              if (activities.isNotEmpty && showUserActivitiesInCard) ...[
                 const Divider(),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -425,7 +435,7 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
                                             DefaultTextStyle.of(context).style,
                                         children: [
                                           TextSpan(
-                                            text: activityTypeText + ' ',
+                                            text: '$activityTypeText ',
                                             style: TextStyle(
                                               color: Theme.of(context)
                                                   .colorScheme
@@ -472,7 +482,7 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
                 ),
@@ -629,10 +639,15 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
                             IconButton(
                               icon: const Icon(Icons.content_copy, size: 16),
                               onPressed: () {
-                                // This would copy to clipboard
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Copied to clipboard')),
+                                  SnackBar(
+                                    content: Text('Copied to clipboard'),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    margin: EdgeInsets.all(10),
+                                  ),
                                 );
                               },
                               tooltip: 'Copy ID',

@@ -1,13 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:snooper/app/widgets/activity_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../helpers/logger.dart';
+import '../models/discord_friend.dart';
 import '../widgets/activity.dart';
 import '../widgets/drawer.dart';
 import '../widgets/friend_widgets.dart';
 import '../widgets/user_setting.dart';
+import 'onboard.dart';
+
+final logger = PersistentLogger();
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasDiscordError = false;
   List<DiscordFriend> _friends = [];
   final Map<String, dynamic> _friendsData = {};
-  String _currentUserId = "878728452155539537"; // Default user ID
+  String? _currentUserId;
+  bool _isFirstRun = true;
+
+  // Default ID to use in debug mode
+  static const String _debugUserId = "878728452155539537";
 
   @override
   void initState() {
@@ -44,15 +55,36 @@ class _HomeScreenState extends State<HomeScreen> {
     if (savedUserId != null && savedUserId.isNotEmpty) {
       setState(() {
         _currentUserId = savedUserId;
+        _isFirstRun = false;
       });
-    }
 
-    // Start data fetching after loading the user ID
-    _fetchDiscordData();
-    _startPeriodicRefresh();
+      _fetchDiscordData();
+      _startPeriodicRefresh();
+    } else {
+      // Use debug ID in debug mode, otherwise keep it null for onboarding
+      if (kDebugMode) {
+        setState(() {
+          _currentUserId = _debugUserId;
+          _isFirstRun = false;
+        });
+
+        // Start data fetching with debug ID
+        _fetchDiscordData();
+        _startPeriodicRefresh();
+      } else {
+        setState(() {
+          _isFirstRun = true;
+          _isLoadingDiscord = false;
+        });
+      }
+    }
   }
 
   Future<void> _fetchDiscordData() async {
+    if (_currentUserId == null || _currentUserId!.isEmpty) {
+      return;
+    }
+
     setState(() {
       _isLoadingDiscord = true;
       _hasDiscordError = false;
@@ -80,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingDiscord = false;
         _hasDiscordError = true;
       });
-      print('Error fetching Discord data: $e');
+      logger.e('Error fetching Discord data: $e');
     }
   }
 
@@ -103,13 +135,17 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print('Error fetching friend Discord data: $e');
+      logger.e('Error fetching friend Discord data: $e');
     }
   }
 
-  void _handleUserIdChanged(String userId) {
+  Future<void> _handleUserIdChanged(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('discord_user_id', userId);
+
     setState(() {
       _currentUserId = userId;
+      _isFirstRun = false;
     });
 
     // Refresh data with new user ID
@@ -134,10 +170,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isFirstRun) {
+      return _buildOnboardingScreen();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Snooper'),
         actions: [
+          if (kDebugMode)
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => DiscordOnboardingScreen(
+                            onUserIdSubmitted: (id) {})));
+              },
+              icon: Icon(PhosphorIcons.info()),
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -158,13 +209,14 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // User Settings component
             DiscordProfileCard(
-              currentUserId: _currentUserId,
+              currentUserId: _currentUserId ?? '',
               onUserIdChanged: _handleUserIdChanged,
             ),
 
             const SizedBox(height: 16),
 
-            DiscordActivityContainer(userId: _currentUserId),
+            if (_currentUserId != null)
+              DiscordActivityContainer(userId: _currentUserId!),
 
             const SizedBox(height: 24),
 
@@ -224,6 +276,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOnboardingScreen() {
+    return DiscordOnboardingScreen(
+      onUserIdSubmitted: _handleUserIdChanged,
     );
   }
 }

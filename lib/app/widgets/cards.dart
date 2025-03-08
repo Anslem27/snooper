@@ -4,7 +4,7 @@ Widget buildErrorCard(String message, BuildContext context) {
   return Card(
     elevation: 0,
     margin: const EdgeInsets.only(bottom: 12),
-    color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+    color: Theme.of(context).colorScheme.errorContainer.withValues(alpha:0.3),
     child: Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(

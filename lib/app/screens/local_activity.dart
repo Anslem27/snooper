@@ -1,6 +1,7 @@
 import 'package:app_usage/app_usage.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:snooper/app/screens/home.dart';
 
 class LocalActivity extends StatefulWidget {
   const LocalActivity({super.key});
@@ -54,7 +55,7 @@ class _LocalActivityState extends State<LocalActivity> {
             infoList.take(10).toList(); // Show top 10 most recent apps
       });
     } catch (e) {
-      print('Failed to get app usage: $e');
+      logger.f('Failed to get app usage: $e');
     }
   }
 
