@@ -195,9 +195,12 @@ class _HomeScreenState extends State<HomeScreen> {
               _fetchFriendsData();
             },
           ),
-          IconButton(onPressed: (){
-            Navigator.pushNamed(context, "/settings");
-          }, icon: Icon(PhosphorIcons.gearFine())),
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(context, "/settings");
+            },
+            icon: Icon(PhosphorIcons.gearFine()),
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -273,6 +276,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
               }).toList()),
+            ] else ...[
+              const SizedBox(height: 24),
+              Text(
+                'No friends added yet.',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
             ],
           ],
         ),

@@ -23,8 +23,8 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
     3,
     (index) => {
       "Step ${index + 1}": index != 1
-          ? "/assets/onboard/${index + 1}.webp"
-          : "/assets/onboard/${index + 1}.jpg",
+          ? "assets/onboard/${index + 1}.webp"
+          : "assets/onboard/${index + 1}.jpg",
     },
   );
 
@@ -37,6 +37,7 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
   bool _isValidating = false;
   String? _errorMessage;
   int _currentStep = 0;
+  bool _showImageInstructions = false;
 
   @override
   void dispose() {
@@ -81,6 +82,12 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
             'Network error. Please check your connection and try again.';
       });
     }
+  }
+
+  void _toggleImageInstructions() {
+    setState(() {
+      _showImageInstructions = !_showImageInstructions;
+    });
   }
 
   @override
@@ -321,6 +328,28 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed: _toggleImageInstructions,
+                  icon: Icon(
+                    _showImageInstructions
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    size: 20,
+                  ),
+                  label: Text(
+                    _showImageInstructions
+                        ? 'Hide visual instructions | TAP TO ZOOM'
+                        : 'See visual instructions',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (_showImageInstructions) ...[
+                  const SizedBox(height: 16),
+                  _buildImageInstructions(),
+                ],
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -354,6 +383,82 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildImageInstructions() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < imageDetails.length; i++) ...[
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Step ${i + 1}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => Dialog(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: InteractiveViewer(
+                              child: Image.asset(
+                                imageDetails[i]['Step ${i + 1}']!,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Hero(
+                      tag: 'imageHero${i + 1}',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          imageDetails[i]['Step ${i + 1}']!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    i == 0
+                        ? 'Open Discord settings and navigate to Advanced'
+                        : i == 1
+                            ? 'Enable Developer Mode'
+                            : 'Right-click on your username and select "Copy ID"',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            if (i < imageDetails.length - 1)
+              Divider(
+                height: 1,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+          ],
+        ],
+      ),
     );
   }
 
