@@ -108,7 +108,6 @@ class _FriendsManagementState extends State<FriendsManagement> {
 
     return Card(
       elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(

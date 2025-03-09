@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:snooper/app/screens/home.dart';
 
 class DiscordOnboardingScreen extends StatefulWidget {
   final Function(String) onUserIdSubmitted;
@@ -30,7 +29,6 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
 
   @override
   initState() {
-    logger.i(imageDetails.toString());
     super.initState();
   }
 
