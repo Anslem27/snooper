@@ -4,6 +4,7 @@ import 'package:snooper/app/screens/home.dart';
 import 'dart:convert';
 
 import '../models/discord_friend.dart';
+import 'animated_fade.dart';
 
 class FriendsManagement extends StatefulWidget {
   final Function(List<DiscordFriend>) onFriendsChanged;
@@ -22,6 +23,7 @@ class _FriendsManagementState extends State<FriendsManagement> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   bool _isAddingFriend = false;
+  bool _isListExpanded = false;
 
   @override
   void initState() {
@@ -87,6 +89,7 @@ class _FriendsManagementState extends State<FriendsManagement> {
       _idController.clear();
       _nameController.clear();
       _isAddingFriend = false;
+      _isListExpanded = true;
     });
 
     _saveFriends();
@@ -101,13 +104,15 @@ class _FriendsManagementState extends State<FriendsManagement> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
+          color: colorScheme.outlineVariant,
           width: 1,
         ),
       ),
@@ -118,112 +123,246 @@ class _FriendsManagementState extends State<FriendsManagement> {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.group,
-                  color: Theme.of(context).colorScheme.primary,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.group,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Discord Friends',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      Text(
+                        '${_friends.length} friends',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isListExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: colorScheme.primary,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isListExpanded = !_isListExpanded;
+                    });
+                  },
+                  tooltip:
+                      _isListExpanded ? 'Hide friend list' : 'Show friend list',
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Discord Friends',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Friend'),
+                FilledButton.tonalIcon(
+                  icon: const Icon(Icons.person_add_alt_1),
+                  label: const Text('Add'),
                   onPressed: () {
                     setState(() {
                       _isAddingFriend = !_isAddingFriend;
+                      if (_isAddingFriend) {
+                        _isListExpanded = true;
+                      }
                     });
                   },
                 ),
               ],
             ),
-            if (_isAddingFriend) ...[
-              const SizedBox(height: 16),
-              TextField(
-                controller: _idController,
-                decoration: InputDecoration(
-                  labelText: 'Discord User ID',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+            AnimatedSizeAndFade(
+              show: _isAddingFriend,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Card(
+                  elevation: 0,
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add New Friend',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _idController,
+                          decoration: InputDecoration(
+                            labelText: 'Discord User ID',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            prefixIcon:
+                                Icon(Icons.numbers, color: colorScheme.primary),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Friend\'s Name',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            prefixIcon:
+                                Icon(Icons.person, color: colorScheme.primary),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isAddingFriend = false;
+                                  _idController.clear();
+                                  _nameController.clear();
+                                });
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            const SizedBox(width: 12),
+                            FilledButton(
+                              onPressed: _addFriend,
+                              child: const Text('Add Friend'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Friend\'s Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+            ),
+            AnimatedSizeAndFade(
+              show: _isListExpanded && _friends.isNotEmpty,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isAddingFriend = false;
-                        _idController.clear();
-                        _nameController.clear();
-                      });
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _friends.length,
+                    itemBuilder: (context, index) {
+                      final friend = _friends[index];
+                      return Card(
+                        elevation: 0,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        color: colorScheme.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          leading: CircleAvatar(
+                            backgroundColor: colorScheme.secondaryContainer,
+                            foregroundColor: colorScheme.onSecondaryContainer,
+                            child: Text(
+                              friend.name.isNotEmpty
+                                  ? friend.name[0].toUpperCase()
+                                  : '?',
+                            ),
+                          ),
+                          title: Text(
+                            friend.name,
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                          ),
+                          subtitle: Text(
+                            'ID: ${friend.id}',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: colorScheme.error,
+                            ),
+                            tooltip: 'Remove friend',
+                            onPressed: () => _removeFriend(index),
+                          ),
+                        ),
+                      );
                     },
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _addFriend,
-                    child: const Text('Add'),
                   ),
                 ],
               ),
-            ],
-            if (_friends.isEmpty && !_isAddingFriend) ...[
+            ),
+            if (_friends.isEmpty && _isListExpanded) ...[
               const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  'No friends added yet. Add friends to track their Discord activity.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                  textAlign: TextAlign.center,
+              Card(
+                elevation: 0,
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: (0.3),
                 ),
-              ),
-            ],
-            if (_friends.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Divider(),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _friends.length,
-                itemBuilder: (context, index) {
-                  final friend = _friends[index];
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(friend.name),
-                    subtitle: Text('ID: ${friend.id}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _removeFriend(index),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.person_search,
+                            size: 48,
+                            color: colorScheme.primary.withValues(
+                              alpha: (0.7),
+                            )),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No friends added yet',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Add friends to track their Discord activity.',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ],
           ],

@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 5),
                       Text(
                         friend.name,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
