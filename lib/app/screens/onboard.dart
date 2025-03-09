@@ -22,9 +22,9 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
   List<Map<String, String>> imageDetails = List.generate(
     3,
     (index) => {
-      "Step $index": index != 1
-          ? "/assets/onboard/$index.webp"
-          : "/assets/onboard/$index.png",
+      "Step ${index + 1}": index != 1
+          ? "/assets/onboard/${index + 1}.webp"
+          : "/assets/onboard/${index + 1}.jpg",
     },
   );
 

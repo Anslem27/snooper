@@ -535,7 +535,7 @@ class _DiscordProfileCardState extends State<DiscordProfileCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Card.outlined(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(

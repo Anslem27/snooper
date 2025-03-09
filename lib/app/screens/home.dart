@@ -10,7 +10,7 @@ import '../helpers/logger.dart';
 import '../models/discord_friend.dart';
 import '../widgets/activity.dart';
 import '../widgets/friend_widgets.dart';
-import '../widgets/user_setting.dart';
+import '../widgets/profile_card.dart';
 import 'onboard.dart';
 
 final logger = PersistentLogger();
@@ -195,6 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _fetchFriendsData();
             },
           ),
+          IconButton(onPressed: (){
+            Navigator.pushNamed(context, "/settings");
+          }, icon: Icon(PhosphorIcons.gearFine())),
         ],
       ),
       body: RefreshIndicator(
