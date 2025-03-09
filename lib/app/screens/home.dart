@@ -9,7 +9,6 @@ import 'dart:convert';
 import '../helpers/logger.dart';
 import '../models/discord_friend.dart';
 import '../widgets/activity.dart';
-import '../widgets/drawer.dart';
 import '../widgets/friend_widgets.dart';
 import '../widgets/user_setting.dart';
 import 'onboard.dart';
@@ -198,7 +197,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      drawer: const SonnerDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
           await _fetchDiscordData();

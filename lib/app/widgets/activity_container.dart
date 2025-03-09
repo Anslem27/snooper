@@ -4,6 +4,7 @@ import 'package:snooper/app/widgets/cards.dart';
 import 'dart:convert';
 import 'dart:async';
 
+import '../screens/home.dart';
 import 'activity.dart';
 
 class DiscordActivityContainer extends StatefulWidget {
@@ -96,7 +97,7 @@ class _DiscordActivityContainerState extends State<DiscordActivityContainer> {
         _isLoading = false;
         _hasError = true;
       });
-      print('Error fetching Discord data: $e');
+      logger.e('Error fetching Discord data: $e');
     }
   }
 
