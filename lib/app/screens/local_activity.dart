@@ -28,6 +28,7 @@ class _LocalActivityState extends State<LocalActivity> {
     super.initState();
     _initDeviceName();
     _initPermissions();
+    _getAppUsage();
   }
 
   Future<void> _initDeviceName() async {
@@ -48,27 +49,27 @@ class _LocalActivityState extends State<LocalActivity> {
   Future<void> _initPermissions() async {
     var usageStatus = await Permission.appTrackingTransparency.request();
     if (usageStatus.isGranted) {
-      await _getAppUsage();
+      // await _getAppUsage();
     } else {
       setState(() => _isLoading = false);
       if (mounted) {
-        _showSnackBar('Usage Access permission not granted');
+        // _showSnackBar('Usage Access permission not granted');
       }
     }
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.all(10),
-      ),
-    );
-  }
+  // void _showSnackBar(String message) {
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(
+  //       content: Text(message),
+  //       behavior: SnackBarBehavior.floating,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(10),
+  //       ),
+  //       margin: const EdgeInsets.all(10),
+  //     ),
+  //   );
+  // }
 
   Future<void> _getAppUsage() async {
     setState(() => _isLoading = true);
@@ -82,7 +83,6 @@ class _LocalActivityState extends State<LocalActivity> {
 
       logger.i(infoList.toString());
 
-      // Filter out system apps and populate app info cache
       List<AppUsageInfo> filteredList = [];
 
       for (final appInfo in infoList) {

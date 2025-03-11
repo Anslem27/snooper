@@ -29,9 +29,9 @@ class EmptyStateView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.app_blocking_rounded,
+              Icons.android,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withValues(alpha:0.5),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -127,55 +127,6 @@ class AppUsageListView extends StatelessWidget {
   }
 }
 
-class CategoryHeader extends StatelessWidget {
-  final String category;
-
-  const CategoryHeader({super.key, required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    IconData getCategoryIcon() {
-      switch (category) {
-        case 'Productivity':
-          return Icons.work_rounded;
-        case 'Social':
-          return Icons.people_rounded;
-        case 'Media':
-          return Icons.movie_rounded;
-        case 'Games':
-          return Icons.sports_esports_rounded;
-        default:
-          return Icons.apps_rounded;
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            getCategoryIcon(),
-            size: 20,
-            color: colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            category,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.primary,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class AppUsageCard extends StatelessWidget {
   final AppUsageInfo appInfo;
   final Future<AppInfo?> Function(String) getAppInfo;
@@ -241,6 +192,55 @@ class AppUsageCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class CategoryHeader extends StatelessWidget {
+  final String category;
+
+  const CategoryHeader({super.key, required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    IconData getCategoryIcon() {
+      switch (category) {
+        case 'Productivity':
+          return Icons.work_rounded;
+        case 'Social':
+          return Icons.people_rounded;
+        case 'Media':
+          return Icons.movie_rounded;
+        case 'Games':
+          return Icons.sports_esports_rounded;
+        default:
+          return Icons.apps_rounded;
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 16, bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            getCategoryIcon(),
+            size: 20,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            category,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.primary,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
