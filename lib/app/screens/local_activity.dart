@@ -51,8 +51,7 @@ class _LocalActivityState extends State<LocalActivity> {
       infoList.sort((a, b) => b.endDate.compareTo(a.endDate));
 
       setState(() {
-        _appUsageList =
-            infoList.take(10).toList(); // Show top 10 most recent apps
+        _appUsageList = infoList.take(10).toList();
       });
     } catch (e) {
       logger.f('Failed to get app usage: $e');
@@ -63,6 +62,7 @@ class _LocalActivityState extends State<LocalActivity> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // TODO: lets get the device name
         title: Text("Local Activity on your S${23}"),
       ),
       body: RefreshIndicator(

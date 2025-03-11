@@ -23,7 +23,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   Timer? _refreshTimer;
   Map<String, dynamic>? _discordData;
   bool _isLoadingDiscord = true;
@@ -32,23 +33,24 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<String, dynamic> _friendsData = {};
   String? _currentUserId;
   bool _isFirstRun = true;
-  final ScrollController _scrollController = ScrollController();
+
+  late TabController _tabController;
 
   NativeCalls nativeCalls = NativeCalls();
 
-  // Default ID to use in debug mode
   static const String _debugUserId = "878728452155539537";
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadSavedUserId();
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
-    _scrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -65,7 +67,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _fetchDiscordData();
       _startPeriodicRefresh();
     } else {
-      // Use debug ID in debug mode, otherwise keep it null for onboarding
       if (kDebugMode) {
         setState(() {
           _currentUserId = _debugUserId;
@@ -187,187 +188,183 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await _fetchDiscordData();
-          await _fetchFriendsData();
-        },
-        child: CustomScrollView(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 120,
-              floating: true,
-              pinned: true,
-              scrolledUnderElevation: 0,
-              backgroundColor: Colors.transparent,
-              flexibleSpace: FlexibleSpaceBar(
-                title: const Text('Snooper'),
-                titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-                expandedTitleScale: 1.5,
-                collapseMode: CollapseMode.pin,
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        colorScheme.primaryContainer.withValues(alpha: 0.8),
-                        Colors.transparent,
-                      ],
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                title: Text('Snooper'),
+                expandedHeight: 120,
+                floating: true,
+                pinned: true,
+                scrolledUnderElevation: 0,
+                // flexibleSpace: FlexibleSpaceBar(
+                //   title: const Text('Snooper'),
+                //   titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+                //   expandedTitleScale: 1.5,
+                //   collapseMode: CollapseMode.pin,
+                // ),
+                actions: [
+                  if (kDebugMode)
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DiscordOnboardingScreen(
+                              onUserIdSubmitted: (id) {},
+                            ),
+                          ),
+                        );
+                      },
+                      icon: Icon(PhosphorIcons.info()),
+                      tooltip: 'Debug Info',
                     ),
+                  IconButton(
+                    icon: Icon(PhosphorIcons.arrowsClockwise()),
+                    onPressed: _showRefreshIndicator,
+                    tooltip: 'Refresh',
                   ),
-                ),
-              ),
-              actions: [
-                if (kDebugMode)
                   IconButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DiscordOnboardingScreen(
-                            onUserIdSubmitted: (id) {},
-                          ),
-                        ),
-                      );
+                      Navigator.pushNamed(context, "/settings");
                     },
-                    icon: Icon(PhosphorIcons.info()),
-                    tooltip: 'Debug Info',
+                    icon: Icon(PhosphorIcons.gearFine()),
+                    tooltip: 'Settings',
                   ),
-                IconButton(
-                  icon: Icon(PhosphorIcons.arrowsClockwise()),
-                  onPressed: _showRefreshIndicator,
-                  tooltip: 'Refresh',
-                ),
-                IconButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, "/settings");
-                  },
-                  icon: Icon(PhosphorIcons.gearFine()),
-                  tooltip: 'Settings',
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-
-            // Content
-            SliverPadding(
-              padding: const EdgeInsets.all(8.0),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  Card(
-                    elevation: 0,
-                    color: colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                  const SizedBox(width: 8),
+                ],
+                bottom: TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(
+                      icon: Icon(PhosphorIcons.user()),
+                      text: 'Your Activity',
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: DiscordProfileCard(
-                        currentUserId: _currentUserId ?? '',
-                        onUserIdChanged: _handleUserIdChanged,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  if (_currentUserId != null)
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
-                      ),
-                      child: DiscordActivityContainer(userId: _currentUserId!),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                    child: Text(
-                      'Discord Activity',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                    ),
-                  ),
-
-                  FriendsManagement(
-                    onFriendsChanged: _handleFriendsChanged,
-                  ),
-
-                  // Display friends' activities
-                  if (_friends.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                      child: Text(
-                        'Friends\' Activities',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.primary,
-                                ),
-                      ),
-                    ),
-                    ..._buildFriendsActivityList(colorScheme),
-                  ] else if (!_isLoadingDiscord) ...[
-                    const SizedBox(height: 24),
-                    Card(
-                      elevation: 0,
-                      color: colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              PhosphorIcons.users(),
-                              size: 48,
-                              color: colorScheme.primary.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No friends added yet',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Add friends to see their Discord activity',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: colorScheme.onSurfaceVariant
-                                        .withValues(alpha: 0.7),
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    Tab(
+                      icon: Icon(PhosphorIcons.users()),
+                      text: 'Friends Activity',
                     ),
                   ],
-                ]),
+                ),
               ),
-            ),
-          ],
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              RefreshIndicator(
+                onRefresh: () async {
+                  await _fetchDiscordData();
+                },
+                child: _buildUserActivityTab(colorScheme),
+              ),
+              RefreshIndicator(
+                onRefresh: () async {
+                  await _fetchFriendsData();
+                },
+                child: _buildFriendsActivityTab(colorScheme),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _showRefreshIndicator,
+          elevation: 2,
+          child: Icon(PhosphorIcons.arrowsClockwise()),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showRefreshIndicator,
-        elevation: 2,
-        child: Icon(PhosphorIcons.arrowsClockwise()),
-      ),
+    );
+  }
+
+  Widget _buildUserActivityTab(ColorScheme colorScheme) {
+    return ListView(
+      padding: const EdgeInsets.all(3.0),
+      children: [
+        Card(
+          elevation: 0,
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DiscordProfileCard(
+              currentUserId: _currentUserId ?? '',
+              onUserIdChanged: _handleUserIdChanged,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_currentUserId != null)
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            ),
+            child: DiscordActivityContainer(userId: _currentUserId!),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFriendsActivityTab(ColorScheme colorScheme) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        FriendsManagement(
+          onFriendsChanged: _handleFriendsChanged,
+        ),
+        const SizedBox(height: 24),
+        if (_friends.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
+            child: Text(
+              'Friends\' Activities',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+            ),
+          ),
+          ..._buildFriendsActivityList(colorScheme),
+        ] else if (!_isLoadingDiscord) ...[
+          Card(
+            elevation: 0,
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Icon(
+                    PhosphorIcons.users(),
+                    size: 48,
+                    color: colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No friends added yet',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Add friends to see their Discord activity',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.7),
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 

@@ -33,8 +33,8 @@ class _WrapperState extends State<Wrapper> {
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(PhosphorIcons.discordLogo()),
-            icon: Icon(PhosphorIconsLight.discordLogo),
+            selectedIcon: Icon(Icons.discord),
+            icon: Icon(Icons.discord_outlined),
             label: 'Presence',
           ),
           NavigationDestination(

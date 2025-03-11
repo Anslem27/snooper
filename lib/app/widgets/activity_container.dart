@@ -114,7 +114,7 @@ class _DiscordActivityContainerState extends State<DiscordActivityContainer> {
       children: [
         if (widget.showHeader) ...[
           Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 8),
             child: Row(
               children: [
                 Text(
@@ -123,6 +123,7 @@ class _DiscordActivityContainerState extends State<DiscordActivityContainer> {
                       : 'Discord Activity',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                 ),
                 const Spacer(),
