@@ -4,12 +4,12 @@ import 'package:installed_apps/app_info.dart';
 
 import '../models/local_activity_models.dart';
 
-class AppSelectionDialog extends StatefulWidget {
+class AppSelectionBottomSheet extends StatefulWidget {
   final List<AppInfo> allApps;
   final Set<String> selectedApps;
   final Function(Set<String>) onSelectionChanged;
 
-  const AppSelectionDialog({
+  const AppSelectionBottomSheet({
     super.key,
     required this.allApps,
     required this.selectedApps,
@@ -17,10 +17,11 @@ class AppSelectionDialog extends StatefulWidget {
   });
 
   @override
-  State<AppSelectionDialog> createState() => _AppSelectionDialogState();
+  State<AppSelectionBottomSheet> createState() =>
+      _AppSelectionBottomSheetState();
 }
 
-class _AppSelectionDialogState extends State<AppSelectionDialog> {
+class _AppSelectionBottomSheetState extends State<AppSelectionBottomSheet> {
   late Set<String> _selected;
   String _searchQuery = '';
 
@@ -45,106 +46,147 @@ class _AppSelectionDialogState extends State<AppSelectionDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return AlertDialog(
-      title: const Text('Select Apps to Track'),
-      contentPadding: const EdgeInsets.only(top: 20),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: MediaQuery.of(context).size.height * 0.6,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: SearchBar(
-                hintText: 'Search apps...',
-                leading: const Icon(Icons.search),
-                padding: WidgetStateProperty.all(
-                  const EdgeInsets.symmetric(horizontal: 16.0),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                itemCount: _filteredApps.length,
-                itemBuilder: (context, index) {
-                  final app = _filteredApps[index];
-                  final isSelected = _selected.contains(app.packageName);
+          ),
 
-                  return ListTile(
-                    leading: app.icon != null
-                        ? Image.memory(app.icon!, width: 40, height: 40)
-                        : Container(
-                            width: 40,
-                            height: 40,
-                            color: colorScheme.surfaceContainerHighest,
-                            child:
-                                Icon(Icons.android, color: colorScheme.primary),
-                          ),
-                    title: Text(
-                      app.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+            child: Row(
+              children: [
+                const Text(
+                  'Select Apps to Track',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: SearchBar(
+              hintText: 'Search apps...',
+              leading: const Icon(Icons.search),
+              padding: WidgetStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 16.0),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              itemCount: _filteredApps.length,
+              itemBuilder: (context, index) {
+                final app = _filteredApps[index];
+                final isSelected = _selected.contains(app.packageName);
+
+                return ListTile(
+                  leading: app.icon != null
+                      ? Image.memory(app.icon!, width: 40, height: 40)
+                      : Container(
+                          width: 40,
+                          height: 40,
+                          color: colorScheme.surfaceContainerHighest,
+                          child:
+                              Icon(Icons.android, color: colorScheme.primary),
+                        ),
+                  title: Text(
+                    app.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    app.packageName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
                     ),
-                    subtitle: Text(
-                      app.packageName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Checkbox(
-                      value: isSelected,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          if (value == true) {
-                            _selected.add(app.packageName);
-                          } else {
-                            _selected.remove(app.packageName);
-                          }
-                        });
-                        widget.onSelectionChanged(_selected);
-                      },
-                    ),
-                    onTap: () {
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Checkbox(
+                    value: isSelected,
+                    onChanged: (bool? value) {
                       setState(() {
-                        if (isSelected) {
-                          _selected.remove(app.packageName);
-                        } else {
+                        if (value == true) {
                           _selected.add(app.packageName);
+                        } else {
+                          _selected.remove(app.packageName);
                         }
                       });
                       widget.onSelectionChanged(_selected);
                     },
-                  );
-                },
-              ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selected.remove(app.packageName);
+                      } else {
+                        _selected.add(app.packageName);
+                      }
+                    });
+                    widget.onSelectionChanged(_selected);
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+          // Buttons
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Done'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Done'),
-        ),
-      ],
     );
   }
 }
@@ -154,6 +196,7 @@ class AppUsageListView extends StatelessWidget {
   final Map<String, AppInfo?> appInfoCache;
   final Map<String, String> appCategories;
   final Future<AppInfo?> Function(String) getAppInfo;
+  final List<AppInfo> allApps;
   final Function(AppUsageInfo) onAppTap;
 
   const AppUsageListView({
@@ -163,6 +206,7 @@ class AppUsageListView extends StatelessWidget {
     required this.appCategories,
     required this.getAppInfo,
     required this.onAppTap,
+    required this.allApps,
   });
 
   @override
@@ -215,7 +259,20 @@ class AppUsageListView extends StatelessWidget {
               shrinkWrap: true,
               itemCount: appsInCategory.length,
               itemBuilder: (context, appIndex) {
+                getBetterAppName(String packageName) {
+                  var actual = allApps.where((app) =>
+                      app.packageName == appsInCategory[appIndex].packageName);
+
+                  if (actual.isEmpty) {
+                    return "N/A";
+                  }
+
+                  return actual.first.name;
+                }
+
                 return AppUsageCard(
+                  actualAppName:
+                      getBetterAppName(appsInCategory[appIndex].packageName),
                   appInfo: appsInCategory[appIndex],
                   getAppInfo: getAppInfo,
                   onTap: () => onAppTap(appsInCategory[appIndex]),
@@ -232,15 +289,16 @@ class AppUsageListView extends StatelessWidget {
 
 class AppUsageCard extends StatelessWidget {
   final AppUsageInfo appInfo;
+  final String actualAppName;
   final Future<AppInfo?> Function(String) getAppInfo;
   final VoidCallback onTap;
 
-  const AppUsageCard({
-    super.key,
-    required this.appInfo,
-    required this.getAppInfo,
-    required this.onTap,
-  });
+  const AppUsageCard(
+      {super.key,
+      required this.appInfo,
+      required this.getAppInfo,
+      required this.onTap,
+      required this.actualAppName});
 
   @override
   Widget build(BuildContext context) {
@@ -275,7 +333,7 @@ class AppUsageCard extends StatelessWidget {
             getAppInfo: getAppInfo,
           ),
           title: Text(
-            appInfo.appName,
+            actualAppName,
             style: const TextStyle(fontWeight: FontWeight.w500),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -321,13 +379,26 @@ class AppDetailsSheet extends StatelessWidget {
   final AppUsageInfo appUsageInfo;
   final AppInfo? appInfo;
   final String category;
+  final List<AppInfo> allApps;
 
   const AppDetailsSheet({
     super.key,
     required this.appUsageInfo,
     required this.appInfo,
     required this.category,
+    required this.allApps,
   });
+
+  getBetterAppName(String packageName) {
+    var actual = allApps
+        .where((app) => app.packageName == (appInfo?.packageName ?? "..."));
+
+    if (actual.isEmpty) {
+      return "N/A";
+    }
+
+    return actual.first.name;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +465,7 @@ class AppDetailsSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            appUsageInfo.appName,
+                            getBetterAppName(appInfo?.packageName ?? "..."),
                             style: Theme.of(context).textTheme.headlineSmall,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -431,41 +502,38 @@ class AppDetailsSheet extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Usage Statistics',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildInfoRow(
-                          context,
-                          'Total Usage Time',
-                          durationText,
-                          Icons.timer_outlined,
-                        ),
-                        const Divider(height: 24),
-                        _buildInfoRow(
-                          context,
-                          'Started Using',
-                          formattedStartTime,
-                          Icons.play_circle_outline,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoRow(
-                          context,
-                          'Last Used',
-                          formattedEndTime,
-                          Icons.stop_circle_outlined,
-                        ),
-                      ],
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Usage Statistics',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoRow(
+                        context,
+                        'Total Usage Time',
+                        durationText,
+                        Icons.timer_outlined,
+                      ),
+                      const Divider(height: 24),
+                      _buildInfoRow(
+                        context,
+                        'Started Using',
+                        formattedStartTime,
+                        Icons.play_circle_outline,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(
+                        context,
+                        'Last Used',
+                        formattedEndTime,
+                        Icons.stop_circle_outlined,
+                      ),
+                    ],
                   ),
                 ),
 
@@ -476,46 +544,43 @@ class AppDetailsSheet extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'App Details',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const SizedBox(height: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'App Details',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoRow(
+                        context,
+                        'Package Name',
+                        appUsageInfo.packageName,
+                        Icons.info_outline,
+                      ),
+                      if (appInfo?.versionName != null) ...[
+                        const SizedBox(height: 12),
                         _buildInfoRow(
                           context,
-                          'Package Name',
-                          appUsageInfo.packageName,
-                          Icons.info_outline,
+                          'Version',
+                          appInfo!.versionName,
+                          Icons.new_releases_outlined,
                         ),
-                        if (appInfo?.versionName != null) ...[
-                          const SizedBox(height: 12),
-                          _buildInfoRow(
-                            context,
-                            'Version',
-                            appInfo!.versionName,
-                            Icons.new_releases_outlined,
-                          ),
-                        ],
-                        if (appInfo?.installedTimestamp != null) ...[
-                          const SizedBox(height: 12),
-                          _buildInfoRow(
-                            context,
-                            'Installed On',
-                            _formatDate(DateTime.fromMillisecondsSinceEpoch(
-                                appInfo!.installedTimestamp)),
-                            Icons.event_outlined,
-                          ),
-                        ],
                       ],
-                    ),
+                      if (appInfo?.installedTimestamp != null) ...[
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          context,
+                          'Installed On',
+                          _formatDate(DateTime.fromMillisecondsSinceEpoch(
+                              appInfo!.installedTimestamp)),
+                          Icons.event_outlined,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 

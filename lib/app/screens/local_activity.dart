@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:snooper/app/screens/home.dart';
@@ -70,7 +71,7 @@ class _LocalActivityState extends State<LocalActivity> {
       final apps = await InstalledApps.getInstalledApps(true, true);
       setState(() {
         _allInstalledApps =
-            apps.where((app) => !_isSystemApp(app.packageName ?? '')).toList();
+            apps.where((app) => !_isSystemApp(app.packageName)).toList();
       });
     } catch (e) {
       logger.e('Failed to load installed apps: $e');
@@ -90,7 +91,9 @@ class _LocalActivityState extends State<LocalActivity> {
   }
 
   Future<void> _getAppUsage() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       DateTime endDate = DateTime.now();
@@ -99,7 +102,7 @@ class _LocalActivityState extends State<LocalActivity> {
       List<AppUsageInfo> infoList =
           await AppUsage().getAppUsage(startDate, endDate);
 
-      logger.i(infoList.toString());
+      logger.d(infoList.toString());
 
       List<AppUsageInfo> filteredList = [];
 
@@ -110,7 +113,6 @@ class _LocalActivityState extends State<LocalActivity> {
         bool isSelected = _selectedAppPackages.isEmpty ||
             _selectedAppPackages.contains(appInfo.packageName);
 
-        // heuristic approach for system apps
         bool isLikelySystemApp = _isSystemApp(appInfo.packageName);
 
         if (appDetails != null && !isLikelySystemApp && isSelected) {
@@ -134,9 +136,12 @@ class _LocalActivityState extends State<LocalActivity> {
   Future<void> _showAppSelectionDialog() async {
     final Set<String> tempSelected = Set.from(_selectedAppPackages);
 
-    await showDialog(
+    await showModalBottomSheet(
       context: context,
-      builder: (context) => AppSelectionDialog(
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AppSelectionBottomSheet(
         allApps: _allInstalledApps,
         selectedApps: tempSelected,
         onSelectionChanged: (newSelection) {
@@ -158,12 +163,18 @@ class _LocalActivityState extends State<LocalActivity> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Activity on your $_deviceName"),
+        title: Text(
+          "Activity on your $_deviceName",
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 16),
+        ),
         scrolledUnderElevation: 0,
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.android),
+            icon: Icon(PhosphorIcons.stackPlus()),
             tooltip: 'Select Apps',
             onPressed: _showAppSelectionDialog,
           ),
@@ -184,6 +195,7 @@ class _LocalActivityState extends State<LocalActivity> {
                       appCategories: _appCategories,
                       getAppInfo: _getAppInfo,
                       onAppTap: _showAppDetails,
+                      allApps: _allInstalledApps,
                     ),
             ),
       floatingActionButton: FloatingActionButton(
@@ -211,6 +223,7 @@ class _LocalActivityState extends State<LocalActivity> {
         appUsageInfo: appInfo,
         appInfo: appDetails,
         category: _appCategories[appInfo.packageName] ?? 'Other',
+        allApps: _allInstalledApps,
       ),
     );
   }
@@ -262,5 +275,3 @@ class _LocalActivityState extends State<LocalActivity> {
     }
   }
 }
-
-// App Selection Dialog
