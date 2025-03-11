@@ -1,4 +1,5 @@
 import 'package:app_usage/app_usage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:installed_apps/app_info.dart';
 import 'package:installed_apps/installed_apps.dart';
@@ -8,6 +9,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:snooper/app/screens/home.dart';
 
 import '../models/local_activity_models.dart';
+import '../widgets/local_activity_widgets.dart';
 
 class LocalActivity extends StatefulWidget {
   const LocalActivity({super.key});
@@ -18,6 +20,8 @@ class LocalActivity extends StatefulWidget {
 
 class _LocalActivityState extends State<LocalActivity> {
   List<AppUsageInfo> _appUsageList = [];
+  List<AppInfo> _allInstalledApps = [];
+  Set<String> _selectedAppPackages = {};
   final Map<String, AppInfo?> _appInfoCache = {};
   final Map<String, String> _appCategories = {};
   String _deviceName = "Your Device";
@@ -27,8 +31,10 @@ class _LocalActivityState extends State<LocalActivity> {
   void initState() {
     super.initState();
     _initDeviceName();
+    _loadSelectedApps();
     _initPermissions();
     _getAppUsage();
+    _loadAllInstalledApps();
   }
 
   Future<void> _initDeviceName() async {
@@ -46,6 +52,31 @@ class _LocalActivityState extends State<LocalActivity> {
     }
   }
 
+  Future<void> _loadSelectedApps() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> selectedApps = prefs.getStringList('selected_apps') ?? [];
+    setState(() {
+      _selectedAppPackages = Set.from(selectedApps);
+    });
+  }
+
+  Future<void> _saveSelectedApps() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('selected_apps', _selectedAppPackages.toList());
+  }
+
+  Future<void> _loadAllInstalledApps() async {
+    try {
+      final apps = await InstalledApps.getInstalledApps(true, true);
+      setState(() {
+        _allInstalledApps =
+            apps.where((app) => !_isSystemApp(app.packageName ?? '')).toList();
+      });
+    } catch (e) {
+      logger.e('Failed to load installed apps: $e');
+    }
+  }
+
   Future<void> _initPermissions() async {
     var usageStatus = await Permission.appTrackingTransparency.request();
     if (usageStatus.isGranted) {
@@ -57,19 +88,6 @@ class _LocalActivityState extends State<LocalActivity> {
       }
     }
   }
-
-  // void _showSnackBar(String message) {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Text(message),
-  //       behavior: SnackBarBehavior.floating,
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(10),
-  //       ),
-  //       margin: const EdgeInsets.all(10),
-  //     ),
-  //   );
-  // }
 
   Future<void> _getAppUsage() async {
     setState(() => _isLoading = true);
@@ -88,12 +106,15 @@ class _LocalActivityState extends State<LocalActivity> {
       for (final appInfo in infoList) {
         final appDetails = await _getAppInfo(appInfo.packageName);
 
-        // heuristic approach
+        // Check if app is selected by user
+        bool isSelected = _selectedAppPackages.isEmpty ||
+            _selectedAppPackages.contains(appInfo.packageName);
+
+        // heuristic approach for system apps
         bool isLikelySystemApp = _isSystemApp(appInfo.packageName);
 
-        if (appDetails != null && !isLikelySystemApp) {
+        if (appDetails != null && !isLikelySystemApp && isSelected) {
           filteredList.add(appInfo);
-
           await categorizeApp(appInfo.packageName);
         }
       }
@@ -110,6 +131,29 @@ class _LocalActivityState extends State<LocalActivity> {
     }
   }
 
+  Future<void> _showAppSelectionDialog() async {
+    final Set<String> tempSelected = Set.from(_selectedAppPackages);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AppSelectionDialog(
+        allApps: _allInstalledApps,
+        selectedApps: tempSelected,
+        onSelectionChanged: (newSelection) {
+          tempSelected.clear();
+          tempSelected.addAll(newSelection);
+        },
+      ),
+    );
+    if (!setEquals(tempSelected, _selectedAppPackages)) {
+      setState(() {
+        _selectedAppPackages = tempSelected;
+      });
+      await _saveSelectedApps();
+      _getAppUsage();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,6 +161,13 @@ class _LocalActivityState extends State<LocalActivity> {
         title: Text("Activity on your $_deviceName"),
         scrolledUnderElevation: 0,
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.android),
+            tooltip: 'Select Apps',
+            onPressed: _showAppSelectionDialog,
+          ),
+        ],
       ),
       body: _isLoading
           ? const LoadingView()
@@ -124,17 +175,42 @@ class _LocalActivityState extends State<LocalActivity> {
               onRefresh: () => _getAppUsage(),
               child: _appUsageList.isEmpty
                   ? EmptyStateView(
-                      message: 'No recent non-system apps detected')
+                      message: _selectedAppPackages.isEmpty
+                          ? 'No recent app activity detected'
+                          : 'No activity for selected apps')
                   : AppUsageListView(
                       appUsageList: _appUsageList,
                       appInfoCache: _appInfoCache,
                       appCategories: _appCategories,
                       getAppInfo: _getAppInfo,
+                      onAppTap: _showAppDetails,
                     ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _getAppUsage,
         child: const Icon(Icons.refresh),
+      ),
+    );
+  }
+
+  Future<void> _showAppDetails(AppUsageInfo appInfo) async {
+    final appDetails = await _getAppInfo(appInfo.packageName);
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => AppDetailsSheet(
+        appUsageInfo: appInfo,
+        appInfo: appDetails,
+        category: _appCategories[appInfo.packageName] ?? 'Other',
       ),
     );
   }
@@ -147,7 +223,6 @@ class _LocalActivityState extends State<LocalActivity> {
   }
 
   bool _isSystemApp(String packageName) {
-    // Common system app package prefixes
     final systemPackagePrefixes = [
       'com.android.',
       'com.google.android.',
@@ -187,3 +262,5 @@ class _LocalActivityState extends State<LocalActivity> {
     }
   }
 }
+
+// App Selection Dialog
