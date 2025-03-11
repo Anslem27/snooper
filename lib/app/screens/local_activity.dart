@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:snooper/app/screens/home.dart';
 
+import '../models/local_activity_models.dart';
+
 class LocalActivity extends StatefulWidget {
   const LocalActivity({super.key});
 
@@ -16,14 +18,16 @@ class LocalActivity extends StatefulWidget {
 
 class _LocalActivityState extends State<LocalActivity> {
   List<AppUsageInfo> _appUsageList = [];
+  final Map<String, AppInfo?> _appInfoCache = {};
+  final Map<String, String> _appCategories = {};
   String _deviceName = "Your Device";
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _initDeviceName();
     _initPermissions();
-    _getAppUsage();
   }
 
   Future<void> _initDeviceName() async {
@@ -46,126 +50,140 @@ class _LocalActivityState extends State<LocalActivity> {
     if (usageStatus.isGranted) {
       await _getAppUsage();
     } else {
+      setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Usage Access permission not granted.'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            margin: EdgeInsets.all(10),
-          ),
-        );
+        _showSnackBar('Usage Access permission not granted');
       }
     }
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(10),
+      ),
+    );
+  }
+
   Future<void> _getAppUsage() async {
+    setState(() => _isLoading = true);
+
     try {
       DateTime endDate = DateTime.now();
       DateTime startDate = endDate.subtract(const Duration(minutes: 5));
 
       List<AppUsageInfo> infoList =
           await AppUsage().getAppUsage(startDate, endDate);
-      infoList.sort((a, b) => b.endDate.compareTo(a.endDate));
 
-      setState(() => _appUsageList = infoList);
+      logger.i(infoList.toString());
+
+      // Filter out system apps and populate app info cache
+      List<AppUsageInfo> filteredList = [];
+
+      for (final appInfo in infoList) {
+        final appDetails = await _getAppInfo(appInfo.packageName);
+
+        // heuristic approach
+        bool isLikelySystemApp = _isSystemApp(appInfo.packageName);
+
+        if (appDetails != null && !isLikelySystemApp) {
+          filteredList.add(appInfo);
+
+          await categorizeApp(appInfo.packageName);
+        }
+      }
+
+      filteredList.sort((a, b) => b.endDate.compareTo(a.endDate));
+
+      setState(() {
+        _appUsageList = filteredList;
+        _isLoading = false;
+      });
     } catch (e) {
+      setState(() => _isLoading = false);
       logger.e('Failed to get app usage: $e');
-    }
-  }
-
-  Future<Widget> _getAppIcon(String packageName) async {
-    AppInfo? app = await InstalledApps.getAppInfo(packageName);
-    if (app != null) {
-      return Image.memory(app.icon!, width: 40, height: 40);
-    } else {
-      return Icon(Icons.android,
-          size: 40, color: Theme.of(context).colorScheme.primary);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Local Activity on $_deviceName")),
-      body: RefreshIndicator(
-        onRefresh: () async => await _getAppUsage(),
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            if (_appUsageList.isEmpty)
-              _buildInfoCard('No recent apps detected or permission denied'),
-            for (final appInfo in _appUsageList) _buildAppUsageCard(appInfo),
-          ],
-        ),
+      appBar: AppBar(
+        title: Text("Activity on your $_deviceName"),
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+      ),
+      body: _isLoading
+          ? const LoadingView()
+          : RefreshIndicator(
+              onRefresh: () => _getAppUsage(),
+              child: _appUsageList.isEmpty
+                  ? EmptyStateView(
+                      message: 'No recent non-system apps detected')
+                  : AppUsageListView(
+                      appUsageList: _appUsageList,
+                      appInfoCache: _appInfoCache,
+                      appCategories: _appCategories,
+                      getAppInfo: _getAppInfo,
+                    ),
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _getAppUsage,
+        child: const Icon(Icons.refresh),
       ),
     );
   }
 
-  Widget _buildAppUsageCard(AppUsageInfo appInfo) {
-    final duration = appInfo.usage;
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    final durationText = minutes > 0
-        ? '$minutes min ${seconds > 0 ? '$seconds sec' : ''}'
-        : '${duration.inSeconds} sec';
-
-    final timeAgo = DateTime.now().difference(appInfo.endDate);
-    final timeAgoText =
-        timeAgo.inMinutes < 1 ? 'just now' : '${timeAgo.inMinutes} minutes ago';
-
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 1,
-        ),
-      ),
-      child: ListTile(
-        leading: FutureBuilder<Widget>(
-          future: _getAppIcon(appInfo.packageName),
-          builder: (context, snapshot) {
-            return snapshot.data ?? Icon(Icons.apps, size: 40);
-          },
-        ),
-        title: Text(
-          appInfo.appName,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text('Used for $durationText'),
-        trailing: Text(
-          timeAgoText,
-          style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-      ),
-    );
+  Future<AppInfo?> _getAppInfo(String packageName) async {
+    if (!_appInfoCache.containsKey(packageName)) {
+      _appInfoCache[packageName] = await InstalledApps.getAppInfo(packageName);
+    }
+    return _appInfoCache[packageName];
   }
 
-  Widget _buildInfoCard(String message) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
-            const SizedBox(width: 16),
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-    );
+  bool _isSystemApp(String packageName) {
+    // Common system app package prefixes
+    final systemPackagePrefixes = [
+      'com.android.',
+      'com.google.android.',
+      'android.',
+      'com.sec.android.',
+      'com.samsung.',
+    ];
+
+    return systemPackagePrefixes
+        .any((prefix) => packageName.startsWith(prefix));
+  }
+
+  Future<void> categorizeApp(String packageName) async {
+    if (!_appCategories.containsKey(packageName)) {
+      final RegExp socialRegex = RegExp(
+          r'(facebook|twitter|instagram|snapchat|tiktok|whatsapp|telegram|messenger|discord)');
+      final RegExp gameRegex =
+          RegExp(r'(game|games|gaming|play\.|puzzles|arcade)');
+      final RegExp productivityRegex =
+          RegExp(r'(office|docs|sheets|slides|work|calendar|drive|note|task)');
+      final RegExp mediaRegex = RegExp(
+          r'(photo|video|camera|gallery|netflix|youtube|spotify|music|player|audio|media)');
+
+      String category = 'Other';
+
+      if (socialRegex.hasMatch(packageName.toLowerCase())) {
+        category = 'Social';
+      } else if (gameRegex.hasMatch(packageName.toLowerCase())) {
+        category = 'Games';
+      } else if (productivityRegex.hasMatch(packageName.toLowerCase())) {
+        category = 'Productivity';
+      } else if (mediaRegex.hasMatch(packageName.toLowerCase())) {
+        category = 'Media';
+      }
+
+      _appCategories[packageName] = category;
+    }
   }
 }

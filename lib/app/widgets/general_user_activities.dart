@@ -93,7 +93,7 @@ class GeneralActivityCard extends StatelessWidget {
               height: 180,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha:0.1),
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(28)),
               ),
@@ -148,7 +148,7 @@ class GeneralActivityCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
@@ -296,7 +296,7 @@ class GeneralActivityCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: imageUrl != null
@@ -349,7 +349,7 @@ class GeneralActivityCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: color.withValues(alpha:0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
