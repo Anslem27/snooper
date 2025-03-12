@@ -118,4 +118,4 @@ fvm flutter pub get -->
 
 ---
 
-_Track your Discord activity and share it with friends. Let's get started by setting up your Discord account.!_
+_Check your Discord activity and check on your friend's as well.!_
