@@ -469,41 +469,11 @@ class MusicActivityCard extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Details grid
-                          _buildDetailRow(context, 'Album',
-                              album ?? 'Unknown Album', Icons.album),
-                          const Divider(height: 24),
-                          _buildDetailRow(context, 'Duration',
-                              duration ?? 'Unknown', Icons.timer),
-                          const Divider(height: 24),
+
                           _buildDetailRow(context, 'Platform',
                               _getPlatformName(), _getPlatformIcon()),
 
                           const SizedBox(height: 24),
-
-                          // Action buttons
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildActionButton(
-                                context,
-                                'Play',
-                                Icons.play_arrow_rounded,
-                                color,
-                              ),
-                              _buildActionButton(
-                                context,
-                                'Share',
-                                Icons.share_rounded,
-                                colorScheme.secondary,
-                              ),
-                              _buildActionButton(
-                                context,
-                                'Save',
-                                Icons.bookmark_border_rounded,
-                                colorScheme.tertiary,
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
@@ -546,35 +516,6 @@ class MusicActivityCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(
-      BuildContext context, String label, IconData icon, Color color) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          padding: const EdgeInsets.all(12),
-          child: Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
         ),
       ],
     );

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-
 class GeneralActivityCard extends StatelessWidget {
   final Map<String, dynamic> activity;
   final String username;
@@ -78,150 +77,180 @@ class GeneralActivityCard extends StatelessWidget {
           'https://cdn.discordapp.com/app-assets/${activity['application_id']}/${activity['assets']['large_image']}';
     }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
-        contentPadding: EdgeInsets.zero,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with image
-            Container(
-              height: 180,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha:0.1),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: imageUrl != null
-                  ? ClipRRect(
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(28)),
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Icon(
-                          icon,
-                          color: color,
-                          size: 64,
-                        ),
-                        errorWidget: (context, url, error) => Icon(
-                          icon,
-                          color: color,
-                          size: 64,
-                        ),
-                      ),
-                    )
-                  : Center(
-                      child: Icon(
-                        icon,
-                        color: color,
-                        size: 64,
-                      ),
-                    ),
-            ),
+    showGeneralDialog(
+        context: context,
+        barrierLabel: "Music Details",
+        barrierDismissible: true,
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, animation1, animation2) => Container(),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutBack,
+          );
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          return ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(curvedAnimation),
+            child: FadeTransition(
+                opacity: Tween<double>(begin: 0.5, end: 1.0).animate(animation),
+                child: Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(icon, color: color, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        '@$username',
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const Spacer(),
+                      // Header with image
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                        height: 180,
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          color: color.withValues(alpha:0.1),
-                          borderRadius: BorderRadius.circular(16),
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(28)),
                         ),
-                        child: Text(
-                          _getTimeSpent(),
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
+                        child: imageUrl != null
+                            ? ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(28)),
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Icon(
+                                    icon,
+                                    color: color,
+                                    size: 64,
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(
+                                    icon,
+                                    color: color,
+                                    size: 64,
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Icon(
+                                  icon,
+                                  color: color,
+                                  size: 64,
+                                ),
+                              ),
+                      ),
+
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(icon, color: color, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '@$username',
+                                  style: TextStyle(
+                                    color: color,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: color.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    _getTimeSpent(),
+                                    style: TextStyle(
+                                      color: color,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              activityName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 22,
+                              ),
+                            ),
+                            if (details != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                details,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                            if (state != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                state,
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+
+                            // Additional Lanyard API data could be displayed here
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 8),
+
+                            // Timestamps and additional info
+                            if (activity['timestamps'] != null) ...[
+                              _buildInfoRow(
+                                  context,
+                                  Icons.timer,
+                                  "Started",
+                                  _formatTimestamp(
+                                      activity['timestamps']['start'])),
+                              if (activity['timestamps']['end'] != null)
+                                _buildInfoRow(
+                                    context,
+                                    Icons.timer_off,
+                                    "Ends",
+                                    _formatTimestamp(
+                                        activity['timestamps']['end'])),
+                            ],
+
+                            if (activity['application_id'] != null)
+                              _buildInfoRow(
+                                  context,
+                                  Icons.apps,
+                                  "Application ID",
+                                  activity['application_id'].toString()),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    activityName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                    ),
-                  ),
-                  if (details != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      details,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                  if (state != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      state,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-
-                  // Additional Lanyard API data could be displayed here
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 8),
-
-                  // Timestamps and additional info
-                  if (activity['timestamps'] != null) ...[
-                    _buildInfoRow(context, Icons.timer, "Started",
-                        _formatTimestamp(activity['timestamps']['start'])),
-                    if (activity['timestamps']['end'] != null)
-                      _buildInfoRow(context, Icons.timer_off, "Ends",
-                          _formatTimestamp(activity['timestamps']['end'])),
-                  ],
-
-                  // Application information
-                  if (activity['application_id'] != null)
-                    _buildInfoRow(context, Icons.apps, "Application ID",
-                        activity['application_id'].toString()),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: const Text('CLOSE'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
-    );
+                  // actions: [
+                  //   TextButton(
+                  //     child: const Text('CLOSE'),
+                  //     onPressed: () => Navigator.of(context).pop(),
+                  //   ),
+                  // ],
+                )),
+          );
+        });
   }
 
   Widget _buildInfoRow(
@@ -242,8 +271,8 @@ class GeneralActivityCard extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 10),
           ),
         ],
       ),
@@ -296,7 +325,7 @@ class GeneralActivityCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha:0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: imageUrl != null
@@ -349,7 +378,7 @@ class GeneralActivityCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: color.withValues(alpha:0.1),
+                            color: color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

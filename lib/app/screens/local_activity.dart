@@ -185,10 +185,12 @@ class _LocalActivityState extends State<LocalActivity> {
           : RefreshIndicator(
               onRefresh: () => _getAppUsage(),
               child: _appUsageList.isEmpty
-                  ? EmptyStateView(
+                  ? Center(
+                      child: CircularProgressIndicator
+                          .adaptive()) /* EmptyStateView(
                       message: _selectedAppPackages.isEmpty
                           ? 'No recent app activity detected'
-                          : 'No activity for selected apps')
+                          : 'No activity for selected apps') */
                   : SingleChildScrollView(
                       child: Column(
                         children: [

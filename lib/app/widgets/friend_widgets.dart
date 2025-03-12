@@ -95,11 +95,37 @@ class _FriendsManagementState extends State<FriendsManagement> {
     _saveFriends();
   }
 
-  void _removeFriend(int index) {
-    setState(() {
-      _friends.removeAt(index);
-    });
-    _saveFriends();
+  Future<void> _removeFriend(int index) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Friend'),
+          content: const Text('Are you sure you want to remove this friend?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      setState(() {
+        _friends.removeAt(index);
+      });
+      _saveFriends();
+    }
   }
 
   @override

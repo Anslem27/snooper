@@ -1,15 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:snooper/app/helpers/native_calls.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:snooper/app/providers/theme_provider.dart';
+import 'package:snooper/app/screens/home.dart';
 import 'package:snooper/app/screens/logs.dart';
 
 import '../models/discord_friend.dart';
 import '../models/settings_elements.dart';
+import 'package:file_picker/file_picker.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -312,9 +318,39 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: ListTile(
                     title: const Text('Export data - From Lanyard'),
                     leading: Icon(PhosphorIcons.export()),
-                    onTap: () {
-                      nativeCalls.showNativeAndroidToast(
-                          "Exporting my data", 100);
+                    onTap: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      String data = prefs.getString('discord_user_data') ??
+                          'No data found';
+
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Exported Data'),
+                          content: SingleChildScrollView(
+                            child: Text(
+                              const JsonEncoder.withIndent('  ')
+                                  .convert(json.decode(data)),
+                              style: const TextStyle(fontFamily: 'monospace'),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: data));
+                                nativeCalls.showNativeAndroidToast(
+                                    "Data copied to clipboard", 100);
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Copy to Clipboard'),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -395,9 +431,80 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: ListTile(
                     title: const Text('Export as Json'),
                     leading: Icon(PhosphorIcons.export()),
-                    onTap: () {
-                      nativeCalls.showNativeAndroidToast(
-                          "Exporting friends list", 100);
+                    onTap: () async {
+                      final friendsJson =
+                          json.encode(_friends.map((f) => f.toJson()).toList());
+
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Exported Friends List'),
+                          content: SingleChildScrollView(
+                            child: Text(
+                              const JsonEncoder.withIndent('  ')
+                                  .convert(json.decode(friendsJson)),
+                              style: const TextStyle(fontFamily: 'monospace'),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Clipboard.setData(
+                                    ClipboardData(text: friendsJson));
+                                nativeCalls.showNativeAndroidToast(
+                                    "Data copied to clipboard", 100);
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Copy to Clipboard'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final directory = await getDownloadsDirectory();
+                                final file = File(
+                                    '${directory!.path}/friends_list.json');
+                                await file.writeAsString(friendsJson);
+                                nativeCalls.showNativeAndroidToast(
+                                    "Data saved as JSON", 100);
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Save as JSON'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                SettingsTile(
+                  child: ListTile(
+                    title: const Text('Import from Json'),
+                    leading: Icon(PhosphorIcons.bracketsCurly()),
+                    onTap: () async {
+                      final directory = await getDownloadsDirectory();
+                      final file = File('${directory!.path}/friends_list.json');
+
+                      if (await file.exists()) {
+                        _importFriendsFromFile(file);
+                      } else {
+                        FilePickerResult? result =
+                            await FilePicker.platform.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['json'],
+                        );
+
+                        if (result != null) {
+                          File pickedFile = File(result.files.single.path!);
+                          _importFriendsFromFile(pickedFile);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("No file selected")),
+                          );
+                        }
+                      }
                     },
                   ),
                 ),
@@ -450,6 +557,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     value: themeProvider.useCustomColor,
                     onChanged: (value) {
                       themeProvider.setUseCustomColor(value);
+
+                      setState(() {
+                        _useCustomColor = value;
+                      });
                     },
                   ),
                 ),
@@ -649,6 +760,41 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
     });
+  }
+
+  Future<void> _importFriendsFromFile(File file) async {
+    try {
+      final friendsJson = await file.readAsString();
+      logger.i("Importing friends from file: ${file.path} - $friendsJson");
+      final friendsList = json.decode(friendsJson) as List;
+      bool anyNewFriend = false;
+
+      for (var friendJson in friendsList) {
+        final friend = DiscordFriend.fromJson(friendJson);
+        if (!_friends.any((f) => f.id == friend.id)) {
+          setState(() {
+            _friends.add(friend);
+          });
+          anyNewFriend = true;
+        }
+      }
+
+      if (anyNewFriend) {
+        await _saveFriends();
+        nativeCalls.showNativeAndroidToast(
+            "Friends imported successfully", 100);
+      } else {
+        nativeCalls.showNativeAndroidToast("No new friends to import", 100);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to import friends: $e"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override

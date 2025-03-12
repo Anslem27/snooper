@@ -5,7 +5,13 @@
   </h1>
 </a>
 
-Track your Discord activity and share it with friends. Let's get started by setting up your Discord account.
+Check your Discord activity and check on your friend's as well.
+
+![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![Compose](https://img.shields.io/static/v1?style=for-the-badge&message=Jetpack+Compose&color=4285F4&logo=Jetpack+Compose&logoColor=FFFFFF&label=)
+![Material](https://custom-icon-badges.demolab.com/badge/material%20you-lightblue?style=for-the-badge&logoColor=333&logo=material-you)
 
 ## Features
 
@@ -29,9 +35,23 @@ This project is a starting point for a Flutter application. To run the project o
    flutter pub get
    ```
 2. Run the application:
+
    ```sh
    flutter run
    ```
+
+### Screenshots
+
+<div style="overflow-x: auto; white-space: nowrap;">
+
+<img src="assets/screenshots/flutter_01.png" width="15%" alt=""/>
+<img src="assets/screenshots/flutter_02.png" width="15%" alt=""/>
+<img src="assets/screenshots/flutter_03.png" width="15%" alt=""/>
+<img src="assets/screenshots/flutter_04.png" width="15%" alt=""/>
+<img src="assets/screenshots/flutter_05.png" width="15%" alt=""/>
+<!-- <img src="assets/screenshots/flutter_06.png"width="15%" alt=""/> -->
+
+</div>
 
 ## Resources
 

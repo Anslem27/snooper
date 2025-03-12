@@ -504,38 +504,46 @@ class AppDetailsSheet extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Usage Statistics',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(3.0),
+                          child: Text(
+                            'Usage Statistics',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow(
-                        context,
-                        'Total Usage Time',
-                        durationText,
-                        Icons.timer_outlined,
-                      ),
-                      const Divider(height: 24),
-                      _buildInfoRow(
-                        context,
-                        'Started Using',
-                        formattedStartTime,
-                        Icons.play_circle_outline,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        context,
-                        'Last Used',
-                        formattedEndTime,
-                        Icons.stop_circle_outlined,
-                      ),
-                    ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildInfoRow(
+                          context,
+                          'Total Usage Time',
+                          durationText,
+                          Icons.timer_outlined,
+                        ),
+                        const Divider(height: 24),
+                        _buildInfoRow(
+                          context,
+                          'Started Using',
+                          formattedStartTime,
+                          Icons.play_circle_outline,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          context,
+                          'Last Used',
+                          formattedEndTime,
+                          Icons.stop_circle_outlined,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -546,43 +554,51 @@ class AppDetailsSheet extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'App Details',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(3.0),
+                          child: Text(
+                            'App Details',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow(
-                        context,
-                        'Package Name',
-                        appUsageInfo.packageName,
-                        Icons.info_outline,
-                      ),
-                      if (appInfo?.versionName != null) ...[
-                        const SizedBox(height: 12),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         _buildInfoRow(
                           context,
-                          'Version',
-                          appInfo!.versionName,
-                          Icons.new_releases_outlined,
+                          'Package Name',
+                          appUsageInfo.packageName,
+                          Icons.info_outline,
                         ),
+                        if (appInfo?.versionName != null) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            context,
+                            'Version',
+                            appInfo!.versionName,
+                            Icons.new_releases_outlined,
+                          ),
+                        ],
+                        if (appInfo?.installedTimestamp != null) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            context,
+                            'Installed On',
+                            _formatDate(DateTime.fromMillisecondsSinceEpoch(
+                                appInfo!.installedTimestamp)),
+                            Icons.event_outlined,
+                          ),
+                        ],
                       ],
-                      if (appInfo?.installedTimestamp != null) ...[
-                        const SizedBox(height: 12),
-                        _buildInfoRow(
-                          context,
-                          'Installed On',
-                          _formatDate(DateTime.fromMillisecondsSinceEpoch(
-                              appInfo!.installedTimestamp)),
-                          Icons.event_outlined,
-                        ),
-                      ],
-                    ],
+                    ),
                   ),
                 ),
 
