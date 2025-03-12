@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
@@ -5,11 +6,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snooper/wrapper.dart';
 
 import 'app/providers/theme_provider.dart';
+import 'app/screens/home.dart';
 import 'app/screens/settings.dart';
+import 'app/services/app_monitor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppMonitorService.initialize();
   await SharedPreferences.getInstance();
+
+  bool hasPermission = await AppMonitorService.checkPermission();
+  if (hasPermission) {
+    await AppMonitorService.startMonitoring();
+  }
+
+  AppMonitorService.appDetections.listen((AppActivityInfo appInfo) {
+    if (kDebugMode) {
+      logger.d(
+          'App Detected: ${appInfo.appName} (${appInfo.packageName}) at ${appInfo.timestamp}');
+    } else {
+      print(
+          'App Detected: ${appInfo.appName} (${appInfo.packageName}) at ${appInfo.timestamp}');
+    }
+  });
 
   runApp(
     MultiProvider(

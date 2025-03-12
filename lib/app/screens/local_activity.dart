@@ -189,13 +189,19 @@ class _LocalActivityState extends State<LocalActivity> {
                       message: _selectedAppPackages.isEmpty
                           ? 'No recent app activity detected'
                           : 'No activity for selected apps')
-                  : AppUsageListView(
-                      appUsageList: _appUsageList,
-                      appInfoCache: _appInfoCache,
-                      appCategories: _appCategories,
-                      getAppInfo: _getAppInfo,
-                      onAppTap: _showAppDetails,
-                      allApps: _allInstalledApps,
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          AppUsageListView(
+                            appUsageList: _appUsageList,
+                            appInfoCache: _appInfoCache,
+                            appCategories: _appCategories,
+                            getAppInfo: _getAppInfo,
+                            onAppTap: _showAppDetails,
+                            allApps: _allInstalledApps,
+                          ),
+                        ],
+                      ),
                     ),
             ),
       floatingActionButton: FloatingActionButton(
