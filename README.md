@@ -1,9 +1,15 @@
 <a href="">
   <h1 align="center" >
    <!-- <img src="assets/branding/logo.jpeg" alt="" style="width:100px; height:100px; border-radius:10px;"/>    <br/> -->
-    Snooper
+    
   </h1>
 </a>
+
+- [English](README.md)
+<!-- - [简体中文](README.zh.md)
+- [Türkçe](README.tr.md) -->
+
+# Snooper
 
 Check your Discord activity and check on your friend's as well.
 
@@ -13,7 +19,13 @@ Check your Discord activity and check on your friend's as well.
 ![Compose](https://img.shields.io/static/v1?style=for-the-badge&message=Jetpack+Compose&color=4285F4&logo=Jetpack+Compose&logoColor=FFFFFF&label=)
 ![Material](https://custom-icon-badges.demolab.com/badge/material%20you-lightblue?style=for-the-badge&logoColor=333&logo=material-you)
 
+<img src="https://storage.googleapis.com/lanyard/static/lanyardtemplogo.png" alt="Lanyard Logo" width="100"/>
+
 ## Features
+
+#### Get started in < 10 seconds
+
+You must [join this Discord server](https://discord.gg/UrXF2cfJ7F) and your presence will available with your id in the app, snooper utilized the lanyard api i.e `GET api.lanyard.rest/v1/users/:your_id`. Too easy !
 
 <!-- - **Formatter**: Quickly format and beautify your code. -->
 
