@@ -87,6 +87,7 @@ class MyApp extends StatelessWidget {
               home: const Wrapper(),
               routes: {
                 '/settings': (context) => const SettingsPage(),
+                '/home': (context) => const HomeScreen(),
               },
             );
           },

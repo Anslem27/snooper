@@ -54,10 +54,11 @@ class AppMonitorService {
         '${info.packageName}|${info.appName}|${info.timestamp.millisecondsSinceEpoch}';
     activities.insert(0, activityStr);
 
-    // Keep only the last 100 activities
+    // Keep only the last 20 activities
     if (activities.length > 100) {
-      activities = activities.sublist(0, 100);
+      activities = activities.sublist(0, 20);
     }
+    logger.d(activities.toString());
 
     await prefs.setStringList('recent_activities', activities);
   }

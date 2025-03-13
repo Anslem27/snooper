@@ -18,8 +18,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
-        
-        // Set the method channel for the service to use
+
         AppMonitorService.setMethodChannel(methodChannel)
 
         methodChannel.setMethodCallHandler { call, result ->
@@ -34,6 +33,7 @@ class MainActivity : FlutterActivity() {
                     }
                     result.success("success")
                 }
+
                 "startAppMonitorService" -> {
                     if (hasUsageStatsPermission()) {
                         startAppMonitorService()
@@ -43,17 +43,21 @@ class MainActivity : FlutterActivity() {
                         result.success(false)
                     }
                 }
+
                 "stopAppMonitorService" -> {
                     stopAppMonitorService()
                     result.success(true)
                 }
+
                 "checkUsageStatsPermission" -> {
                     result.success(hasUsageStatsPermission())
                 }
+
                 "requestUsageStatsPermission" -> {
                     requestUsageStatsPermission()
                     result.success(true)
                 }
+
                 else -> {
                     result.notImplemented()
                 }
