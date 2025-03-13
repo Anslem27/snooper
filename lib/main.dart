@@ -9,6 +9,7 @@ import 'app/providers/theme_provider.dart';
 import 'app/screens/home.dart';
 import 'app/screens/settings.dart';
 import 'app/services/app_monitor.dart';
+import 'app/services/presence_notifications.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,9 @@ void main() async {
           'App Detected: ${appInfo.appName} (${appInfo.packageName}) at ${appInfo.timestamp}');
     }
   });
+
+  final notificationService = NotificationService();
+  await notificationService.initialize();
 
   runApp(
     MultiProvider(
