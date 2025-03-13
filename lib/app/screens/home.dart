@@ -12,6 +12,8 @@ import '../models/discord_friend.dart';
 import '../services/lanyard.dart';
 import '../widgets/activity.dart';
 import '../widgets/friend_widgets.dart';
+import '../widgets/logo.dart';
+import '../widgets/notifications_btn.dart';
 import '../widgets/profile_card.dart';
 import 'onboard.dart';
 
@@ -196,32 +198,33 @@ class _HomeScreenState extends State<HomeScreen>
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
               SliverAppBar(
-                title: Text('Snooper'),
+                title: SnooperLogo(),
                 expandedHeight: 120,
                 floating: true,
                 pinned: true,
                 scrolledUnderElevation: 0,
                 actions: [
-                  if (kDebugMode)
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DiscordOnboardingScreen(
-                              onUserIdSubmitted: (id) {},
-                            ),
-                          ),
-                        );
-                      },
-                      icon: Icon(PhosphorIcons.info()),
-                      tooltip: 'Debug Info',
-                    ),
-                  IconButton(
-                    icon: Icon(PhosphorIcons.arrowsClockwise()),
-                    onPressed: _showRefreshIndicator,
-                    tooltip: 'Refresh',
-                  ),
+                  // if (kDebugMode)
+                  //   IconButton(
+                  //     onPressed: () {
+                  //       Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(
+                  //           builder: (_) => DiscordOnboardingScreen(
+                  //             onUserIdSubmitted: (id) {},
+                  //           ),
+                  //         ),
+                  //       );
+                  //     },
+                  //     icon: Icon(PhosphorIcons.info()),
+                  //     tooltip: 'Debug Info',
+                  //   ),
+                  // IconButton(
+                  //   icon: Icon(PhosphorIcons.arrowsClockwise()),
+                  //   onPressed: _showRefreshIndicator,
+                  //   tooltip: 'Refresh',
+                  // ),
+                  NotificationIconWithBAdge(),
                   IconButton(
                     onPressed: () {
                       Navigator.pushNamed(context, "/settings");

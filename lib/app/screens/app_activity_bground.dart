@@ -85,6 +85,7 @@ class _AppActivityMonitorScreenState extends State<AppActivityMonitorScreen> {
   Future<void> _requestPermission() async {
     await AppMonitorService.requestPermission();
     // We'll need to check again after returning from the settings
+    // TODO: use native toast
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Please grant usage access permission'),

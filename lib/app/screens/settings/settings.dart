@@ -18,6 +18,7 @@ import '../../models/settings_elements.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../services/presence_notifications.dart';
+import '../user_data.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -314,6 +315,16 @@ class _SettingsPageState extends State<SettingsPage> {
                     onTap: () {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (_) => LogsPage()));
+                    },
+                  ),
+                ),
+                SettingsTile(
+                  child: ListTile(
+                    title: const Text('Your data'),
+                    leading: Icon(PhosphorIcons.database()),
+                    onTap: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => AllYourDataPage()));
                     },
                   ),
                 ),

@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:snooper/app/screens/home.dart';
 
 import '../models/discord_friend.dart';
+import '../models/app_notification.dart';
 import 'lanyard.dart';
 
 class NotificationService {
@@ -21,6 +22,14 @@ class NotificationService {
   final Map<String, StreamSubscription<LanyardUser>> _subscriptions = {};
   Timer? _pollingTimer;
   bool _initialized = false;
+
+  List<AppNotification> _notificationHistory = [];
+  final StreamController<List<AppNotification>> _notificationController =
+      StreamController<List<AppNotification>>.broadcast();
+  Stream<List<AppNotification>> get notificationsStream =>
+      _notificationController.stream;
+
+  int get unreadCount => _notificationHistory.where((n) => !n.isRead).length;
 
   Function(List<DiscordFriend>)? onFriendsChanged;
 
@@ -50,6 +59,7 @@ class NotificationService {
     logger.i('Notification permission granted: $permissionGranted');
 
     await _loadFriends();
+    await _loadNotificationHistory();
 
     _startMonitoring();
 
@@ -69,6 +79,38 @@ class NotificationService {
     } catch (e) {
       logger.f('Error loading friends: $e');
       _friends = [];
+    }
+  }
+
+  Future<void> _loadNotificationHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? notificationsJson = prefs.getString('notification_history');
+
+      if (notificationsJson != null) {
+        final List<dynamic> decodedJson = json.decode(notificationsJson);
+        _notificationHistory =
+            decodedJson.map((item) => AppNotification.fromJson(item)).toList();
+
+        _notificationHistory.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+        _notificationController.add(_notificationHistory);
+      }
+    } catch (e) {
+      logger.f('Error loading notification history: $e');
+      _notificationHistory = [];
+    }
+  }
+
+  Future<void> _saveNotificationHistory() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonData = _notificationHistory.map((n) => n.toJson()).toList();
+      await prefs.setString('notification_history', json.encode(jsonData));
+
+      _notificationController.add(_notificationHistory);
+    } catch (e) {
+      logger.f('Error saving notification history: $e');
     }
   }
 
@@ -143,7 +185,6 @@ class NotificationService {
     }
   }
 
-  /*  make ntfn */
   Future<void> _showOnlineNotification(
       DiscordFriend friend, String? activity) async {
     const androidDetails = AndroidNotificationDetails(
@@ -168,10 +209,24 @@ class NotificationService {
       message += ' playing $activity';
     }
 
+    // Create and store notification history entry
+    final notification = AppNotification(
+      id: '${friend.id}_online_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Friend Online',
+      message: message,
+      timestamp: DateTime.now(),
+      friendId: friend.id,
+      activityName: activity,
+      type: NotificationType.friendOnline,
+    );
+
+    _notificationHistory.add(notification);
+    await _saveNotificationHistory();
+
     await _notifications.show(
       friend.id.hashCode,
-      'Friend Online',
-      message,
+      notification.title,
+      notification.message,
       details,
     );
   }
@@ -199,10 +254,24 @@ class NotificationService {
 
     String message = '${friend.name} is now $activity';
 
+    // Create and store notification history entry
+    final notification = AppNotification(
+      id: '${friend.id}_activity_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Friend Activity',
+      message: message,
+      timestamp: DateTime.now(),
+      friendId: friend.id,
+      activityName: activity,
+      type: NotificationType.friendActivity,
+    );
+
+    _notificationHistory.add(notification);
+    await _saveNotificationHistory();
+
     await _notifications.show(
       (friend.id + activity).hashCode,
-      'Friend Activity',
-      message,
+      notification.title,
+      notification.message,
       details,
     );
   }
@@ -211,8 +280,41 @@ class NotificationService {
     return List.from(_friends);
   }
 
+  List<AppNotification> getNotifications() {
+    return List.from(_notificationHistory);
+  }
+
+  Future<void> markNotificationAsRead(String notificationId) async {
+    final index =
+        _notificationHistory.indexWhere((n) => n.id == notificationId);
+    if (index >= 0) {
+      _notificationHistory[index].isRead = true;
+      await _saveNotificationHistory();
+    }
+  }
+
+  Future<void> markAllNotificationsAsRead() async {
+    for (var notification in _notificationHistory) {
+      notification.isRead = true;
+    }
+    await _saveNotificationHistory();
+  }
+
+  Future<void> removeNotification(String notificationId) async {
+    final index =
+        _notificationHistory.indexWhere((n) => n.id == notificationId);
+    if (index >= 0) {
+      _notificationHistory.removeAt(index);
+      await _saveNotificationHistory();
+    }
+  }
+
+  Future<void> clearNotificationHistory() async {
+    _notificationHistory.clear();
+    await _saveNotificationHistory();
+  }
+
   Future<void> showTestNotification() async {
-    // Check if initialization is complete first
     if (!_initialized) {
       logger.w('Attempted to show notification before initialization');
       await initialize();
@@ -251,12 +353,29 @@ class NotificationService {
         NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     try {
+      final notificationId =
+          DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      final message =
+          'This is a test notification sent at ${DateTime.now().toString()}';
+
+      final notification = AppNotification(
+        id: 'test_$notificationId',
+        title: 'Test Notification',
+        message: message,
+        timestamp: DateTime.now(),
+        type: NotificationType.test,
+      );
+
+      _notificationHistory.add(notification);
+      await _saveNotificationHistory();
+
       await _notifications.show(
-        DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        'Test Notification',
-        'This is a test notification sent at ${DateTime.now().toString()}',
+        notificationId,
+        notification.title,
+        notification.message,
         details,
       );
+
       logger.i('Test notification sent successfully');
     } catch (e) {
       logger.e('Error showing notification: $e');
@@ -266,5 +385,6 @@ class NotificationService {
   void dispose() {
     _stopMonitoring();
     _lanyardService.dispose();
+    _notificationController.close();
   }
 }
