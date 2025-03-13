@@ -65,21 +65,21 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
     try {
       final String jsonData = jsonEncode(_prefsData);
 
-      // Create a multipart request
       var request = http.MultipartRequest('POST', Uri.parse(_nullPointerUrl));
 
-      // Add the file part
-      var file = http.MultipartFile.fromString('file', jsonData,
-          filename: 'app_backup.json');
-      request.files.add(file);
+      // for avoiding looking like a hijacked device response
+      request.headers.addAll({
+        'User-Agent': 'Flutter App/1.0',
+        'Accept': '*/*',
+      });
 
-      // Log the request body
-      logger.i('Request Body: ${request.fields}');
+      var file = http.MultipartFile.fromString('file', jsonData,
+          filename: 'snooper_app_backup.json');
+      request.files.add(file);
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       logger.i(response.body);
-      // rejecting traffic from suspected hijacked device
 
       if (response.statusCode == 200) {
         final url = response.body.trim();
@@ -92,7 +92,7 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
 
         _showSnackBar('Backup successful!');
       } else {
-        _showSnackBar('Error: ${response.statusCode}');
+        _showSnackBar('Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       _showSnackBar('Error uploading: $e');
@@ -162,16 +162,25 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
     }
   }
 
-  void _showBackupInfoDialog() {
-    showDialog(
+  void _showBackupInfoSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About Null Pointer Backup'),
-        content: SingleChildScrollView(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text(
+                'About Null Pointer Backup',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
               Text(
                 'Your data is backed up using the Null Pointer service, a temporary file hosting service.',
                 style: Theme.of(context).textTheme.bodyLarge,
@@ -202,15 +211,18 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
                 '• This is not a permanent backup solution',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              // read more here
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
@@ -253,7 +265,12 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
   void _showSnackBar(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        margin: const EdgeInsets.all(16),
+      ),
     );
   }
 
@@ -275,7 +292,9 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: _showBackupInfoDialog,
+            onPressed: () {
+              _showBackupInfoSheet(context);
+            },
             tooltip: 'Backup Info',
           ),
         ],
@@ -406,6 +425,7 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
                   },
                   tooltip: 'Open URL',
                 ),
+                // reset the prefs to the default
               ],
             ),
             const SizedBox(height: 8),
