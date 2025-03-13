@@ -22,13 +22,36 @@ Check your Discord activity and check on your friend's as well.
 
 ## Features
 
-#### Get started in < 10 seconds
+#### Data storage
+
+```
+THE NULL POINTER
+================
+
+Temporary file hoster.
+
+min_age = 30 days
+max_age = 1 year
+max_size = 512.0 MiB
+retention = min_age + (min_age - max_age) * pow((file_size / max_size - 1), 3)
+```
+
+#### Discord Presence
+
+##### Get started in < 10 seconds
 
 You must [join this Discord server](https://discord.gg/UrXF2cfJ7F) and your presence will available with your id in the app, snooper utilized the lanyard api i.e `GET api.lanyard.rest/v1/users/:your_id`. Too easy !
 
 <!-- - **Notofications**: Get to know when your pals are online. -->
 
 - **More tools coming soon!**
+
+## Planned Featured
+
+- Gamification
+- Local Presence emittion
+- Summary based of lanyard data - Monthly
+- Tidy Code
 
 ## Getting Started
 

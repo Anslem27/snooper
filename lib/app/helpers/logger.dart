@@ -36,6 +36,13 @@ class PersistentLogger {
     await prefs.setString(_storageKey, encodedLogs);
   }
 
+  Future<void> saveLogs(List<LogEntry> logs) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String encodedLogs =
+        jsonEncode(logs.map((log) => log.toJson()).toList());
+    await prefs.setString(_storageKey, encodedLogs);
+  }
+
   Future<void> t(String message) async {
     _logger.t(message);
     await _addLog(message, 'trace');
