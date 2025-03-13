@@ -69,7 +69,11 @@ class ActivityRenderer extends StatelessWidget {
     // Show offline state if no activities
     if (widgets.isEmpty) {
       widgets.add(
-        OfflineActivityCard(username: username),
+        OfflineActivityCard(
+            avatarUrl: discordData['discord_user'] != null
+                ? 'https://cdn.discordapp.com/avatars/${discordData["discord_user"]['id']}/${discordData["discord_user"]['avatar']}'
+                : 'https://cdn.discordapp.com/embed/avatars/0.png',
+            username: username),
       );
     }
 

@@ -75,7 +75,7 @@ class AppMonitorService {
       if (result) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('app_monitor_enabled', true);
-        logger.i('App monitoring service started');
+        logger.d('App monitoring service started');
       } else {
         logger.w('App monitoring service failed to start. Permission issue?');
       }

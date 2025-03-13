@@ -56,7 +56,7 @@ class NotificationService {
     final bool? permissionGranted =
         await androidPlugin?.requestNotificationsPermission();
 
-    logger.i('Notification permission granted: $permissionGranted');
+    logger.d('Notification permission granted: $permissionGranted');
 
     await _loadFriends();
     await _loadNotificationHistory();
@@ -327,7 +327,7 @@ class NotificationService {
     final bool? permissionGranted =
         await androidPlugin?.requestNotificationsPermission();
 
-    logger.i('Notification permission granted: $permissionGranted');
+    logger.d('Notification permission granted: $permissionGranted');
 
     const androidDetails = AndroidNotificationDetails(
       'test_notification_channel',

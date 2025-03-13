@@ -1,11 +1,14 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class OfflineActivityCard extends StatelessWidget {
   final String username;
+  final String avatarUrl;
 
   const OfflineActivityCard({
     super.key,
     required this.username,
+    required this.avatarUrl,
   });
 
   @override
@@ -17,17 +20,28 @@ class OfflineActivityCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.deepPurple.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.discord,
-                color: Colors.deepPurple,
-                size: 24,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CachedNetworkImage(
+                imageUrl: avatarUrl,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorWidget: (context, url, error) {
+                  return Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple.withAlpha(25),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.discord,
+                      color: Colors.deepPurple,
+                      size: 24,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),
