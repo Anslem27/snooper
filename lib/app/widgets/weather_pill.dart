@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:snooper/app/screens/home.dart';
 
 import '../models/weathery_models.dart';
 
@@ -66,17 +65,17 @@ class _WeatherPillState extends State<WeatherPill> {
     }
   }
 
-  void _handleError(String message) {
-    setState(() {
-      _isLoading = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
+  // void _handleError(String message) {
+  //   setState(() {
+  //     _isLoading = false;
+  //   });
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(
+  //       content: Text(message),
+  //       backgroundColor: Colors.red,
+  //     ),
+  //   );
+  // }
 
   void _showCitySearchDialog() {
     final TextEditingController controller = TextEditingController();

@@ -57,12 +57,6 @@ class GeneralActivityCard extends StatelessWidget {
     return Icons.app_shortcut;
   }
 
-  String _getTimeSpent() {
-    // This would ideally use the timestamps from the Lanyard API
-    // For now returning placeholder text
-    return "Started 34m ago";
-  }
-
   void _showActivityDetails(BuildContext context) {
     final activityName = activity['name'] ?? 'Unknown Activity';
     final details = activity['details'];
@@ -155,23 +149,6 @@ class GeneralActivityCard extends StatelessWidget {
                                     color: color,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    _getTimeSpent(),
-                                    style: TextStyle(
-                                      color: color,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                    ),
                                   ),
                                 ),
                               ],
@@ -371,23 +348,6 @@ class GeneralActivityCard extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                             color: color,
                             fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            _getTimeSpent(),
-                            style: TextStyle(
-                              color: color,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
                           ),
                         ),
                       ],

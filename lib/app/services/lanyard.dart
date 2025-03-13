@@ -36,26 +36,20 @@ class LanyardService {
   Future<List<LanyardUser>> getUsersByRest(List<String> userIds) async {
     if (userIds.isEmpty) return [];
 
-    try {
-      final response =
-          await http.get(Uri.parse('$_apiBaseUrl/users/${userIds.join(",")}'));
+    List<LanyardUser> users = [];
 
-      logger.i(response.body);
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        if (jsonData['success'] == true && jsonData['data'] != null) {
-          final Map<String, dynamic> usersData = jsonData['data'];
-          return usersData.entries
-              .map((entry) => LanyardUser.fromJson(entry.value))
-              .toList();
+    for (final userId in userIds) {
+      try {
+        final user = await getUserByRest(userId);
+        if (user != null) {
+          users.add(user);
         }
+      } catch (e) {
+        logger.e('Error fetching data for user $userId: $e');
       }
-      return [];
-    } catch (e) {
-      logger.e('Error fetching users data: $e');
-      return [];
     }
+
+    return users;
   }
 
   Stream<LanyardUser> subscribeToUser(String userId) {
@@ -104,7 +98,6 @@ class LanyardService {
       _userControllers[userId]?.close();
       _userControllers.remove(userId);
 
-      // If no more subscriptions, stop polling
       if (_userControllers.isEmpty) {
         _pollingTimer?.cancel();
         _pollingTimer = null;
@@ -122,4 +115,3 @@ class LanyardService {
     _userControllers.clear();
   }
 }
-
