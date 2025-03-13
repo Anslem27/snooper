@@ -23,8 +23,8 @@ void main() async {
 
   AppMonitorService.appDetections.listen((AppActivityInfo appInfo) {
     if (kDebugMode) {
-      logger.d(
-          'App Detected: ${appInfo.appName} (${appInfo.packageName}) at ${appInfo.timestamp}');
+      // logger.d(
+      //     'App Detected: ${appInfo.appName} (${appInfo.packageName}) at ${appInfo.timestamp}');
     } else {
       print(
           'App Detected: ${appInfo.appName} (${appInfo.packageName}) at ${appInfo.timestamp}');

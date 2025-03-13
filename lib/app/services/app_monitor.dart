@@ -34,7 +34,6 @@ class AppMonitorService {
           timestamp: DateTime.fromMillisecondsSinceEpoch(args['timestamp']),
         );
 
-        // logger.d('App detected: ${appInfo.appName} (${appInfo.packageName})');
         _appDetectionController.add(appInfo);
 
         await _storeAppActivity(appInfo);
@@ -52,13 +51,19 @@ class AppMonitorService {
     // new activity in format: packageName|appName|timestamp
     String activityStr =
         '${info.packageName}|${info.appName}|${info.timestamp.millisecondsSinceEpoch}';
-    activities.insert(0, activityStr);
 
-    // Keep only the last 20 activities
-    if (activities.length > 100) {
-      activities = activities.sublist(0, 20);
+    int existingIndex = activities
+        .indexWhere((activity) => activity.startsWith('${info.packageName}|'));
+    if (existingIndex != -1) {
+      activities[existingIndex] = activityStr;
+    } else {
+      activities.insert(0, activityStr);
     }
-    logger.d(activities.toString());
+
+    // Keep only the last 5 activities
+    if (activities.length > 5) {
+      activities = activities.sublist(0, 5);
+    }
 
     await prefs.setStringList('recent_activities', activities);
   }
