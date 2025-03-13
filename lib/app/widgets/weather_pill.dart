@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snooper/app/screens/home.dart';
 
 import '../models/weathery_models.dart';
 
@@ -58,10 +59,10 @@ class _WeatherPillState extends State<WeatherPill> {
         });
         _saveCity(city);
       } else {
-        _handleError('Failed to load weather data');
+        // _handleError('Failed to load weather data');
       }
     } catch (e) {
-      _handleError('Error: $e');
+      // _handleError('Error: $e');
     }
   }
 

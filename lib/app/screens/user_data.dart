@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:snooper/app/screens/home.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AllYourDataPage extends StatefulWidget {
@@ -72,8 +73,13 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
           filename: 'app_backup.json');
       request.files.add(file);
 
+      // Log the request body
+      logger.i('Request Body: ${request.fields}');
+
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
+      logger.i(response.body);
+      // rejecting traffic from suspected hijacked device
 
       if (response.statusCode == 200) {
         final url = response.body.trim();
