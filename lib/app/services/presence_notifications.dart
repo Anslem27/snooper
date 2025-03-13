@@ -9,6 +9,8 @@ import '../models/app_notification.dart';
 import '../models/discord_friendv2.dart';
 import 'lanyard.dart';
 
+
+// TODO: fix
 class NotificationService {
   final Map<String, String?> _currentActivities = {};
   static final NotificationService _instance = NotificationService._internal();
@@ -174,9 +176,11 @@ class NotificationService {
   }
 
   void _handleUserUpdate(DiscordFriend friend, LanyardUser lanyardUser) {
+    // Get previous state information
     final wasOnline = _currentActivities.containsKey(friend.id);
     final String? previousActivity = _currentActivities[friend.id];
 
+    // Get current activity
     String? currentActivity;
     if (lanyardUser.activities.isNotEmpty) {
       currentActivity = lanyardUser.activities[0].name;
@@ -185,21 +189,42 @@ class NotificationService {
     logger.d(
         'Friend update: ${friend.name} - Online: ${lanyardUser.online}, Activity: $currentActivity');
 
-    // Update stored activity
+    // CASE 1: Friend was offline and is now online
+    if (!wasOnline && lanyardUser.online) {
+      logger.d('Friend came online: ${friend.name}');
+      _showOnlineNotification(friend, currentActivity);
+      _currentActivities[friend.id] = currentActivity;
+      return;
+    }
+
+    // CASE 2: Friend was online and is now offline
+    if (wasOnline && !lanyardUser.online) {
+      logger.d('Friend went offline: ${friend.name}');
+      // We don't show notification for going offline
+      _currentActivities.remove(friend.id);
+      return;
+    }
+
+    // CASE 3: Friend was online and still is, but activity changed
+    if (wasOnline &&
+        lanyardUser.online &&
+        previousActivity != currentActivity) {
+      // Only notify if they started a new activity or stopped their previous one
+      if ((previousActivity == null && currentActivity != null) ||
+          (previousActivity != null && currentActivity == null) ||
+          (previousActivity != null && currentActivity != null)) {
+        logger.d('Friend activity changed: ${friend.name} - $currentActivity');
+        _showActivityNotification(friend, currentActivity ?? 'online');
+      }
+      _currentActivities[friend.id] = currentActivity;
+      return;
+    }
+
+    // Update the status map if online, but don't notify (no relevant change)
     if (lanyardUser.online) {
       _currentActivities[friend.id] = currentActivity;
     } else {
       _currentActivities.remove(friend.id);
-    }
-
-    if (!wasOnline && lanyardUser.online) {
-      logger.d('Friend came online: ${friend.name}');
-      _showOnlineNotification(friend, currentActivity);
-    } else if (lanyardUser.online &&
-        previousActivity != currentActivity &&
-        currentActivity != null) {
-      logger.d('Friend activity changed: ${friend.name} - $currentActivity');
-      _showActivityNotification(friend, currentActivity);
     }
   }
 
@@ -359,7 +384,6 @@ class NotificationService {
       await initialize();
     }
 
-    // Request permission explicitly (especially important for iOS)
     final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
         _notifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
