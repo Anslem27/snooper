@@ -13,9 +13,11 @@ import 'package:snooper/app/providers/theme_provider.dart';
 import 'package:snooper/app/screens/home.dart';
 import 'package:snooper/app/screens/logs.dart';
 
-import '../models/discord_friend.dart';
-import '../models/settings_elements.dart';
+import '../../models/discord_friend.dart';
+import '../../models/settings_elements.dart';
 import 'package:file_picker/file_picker.dart';
+
+import '../../services/presence_notifications.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -36,6 +38,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _showGameChanges = true;
 
   NativeCalls nativeCalls = NativeCalls();
+  final notificationService = NotificationService();
 
   @override
   void initState() {
@@ -622,6 +625,25 @@ class _SettingsPageState extends State<SettingsPage> {
                           _showGameChanges = value;
                         });
                         _saveNotificationSettings();
+                      },
+                    ),
+                  ),
+                  SettingsTile(
+                    child: ListTile(
+                      title: const Text('Test Notification'),
+                      subtitle: const Text('Show a test notification'),
+                      leading: Icon(PhosphorIcons.bellZ()),
+                      onTap: () async {
+                        try {
+                          logger.i('Test notification button pressed');
+                          await notificationService.showTestNotification();
+                        } catch (e) {
+                          logger.e('Error in notification button press: $e');
+                          // Optionally show a snackbar or toast to the user
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Notification error: $e')),
+                          );
+                        }
                       },
                     ),
                   ),

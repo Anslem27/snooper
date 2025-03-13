@@ -16,7 +16,6 @@ Check your Discord activity and check on your friend's as well.
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
-![Compose](https://img.shields.io/static/v1?style=for-the-badge&message=Jetpack+Compose&color=4285F4&logo=Jetpack+Compose&logoColor=FFFFFF&label=)
 ![Material](https://custom-icon-badges.demolab.com/badge/material%20you-lightblue?style=for-the-badge&logoColor=333&logo=material-you)
 
 <img src="https://storage.googleapis.com/lanyard/static/lanyardtemplogo.png" alt="Lanyard Logo" width="100"/>
@@ -27,7 +26,7 @@ Check your Discord activity and check on your friend's as well.
 
 You must [join this Discord server](https://discord.gg/UrXF2cfJ7F) and your presence will available with your id in the app, snooper utilized the lanyard api i.e `GET api.lanyard.rest/v1/users/:your_id`. Too easy !
 
-<!-- - **Formatter**: Quickly format and beautify your code. -->
+<!-- - **Notofications**: Get to know when your pals are online. -->
 
 - **More tools coming soon!**
 

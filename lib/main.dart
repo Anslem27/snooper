@@ -7,7 +7,7 @@ import 'package:snooper/wrapper.dart';
 
 import 'app/providers/theme_provider.dart';
 import 'app/screens/home.dart';
-import 'app/screens/settings.dart';
+import 'app/screens/settings/settings.dart';
 import 'app/services/app_monitor.dart';
 import 'app/services/presence_notifications.dart';
 

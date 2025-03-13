@@ -10,7 +10,6 @@ import 'dart:convert';
 import '../helpers/logger.dart';
 import '../models/discord_friend.dart';
 import '../services/lanyard.dart';
-import '../services/presence_notifications.dart';
 import '../widgets/activity.dart';
 import '../widgets/friend_widgets.dart';
 import '../widgets/profile_card.dart';
@@ -41,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen>
   NativeCalls nativeCalls = NativeCalls();
   final LanyardService _lanyardService =
       LanyardService(); // TODO: remove hard coded calls and use this
-  final notificationService = NotificationService();
 
   static const String _debugUserId = "878728452155539537";
 
@@ -219,22 +217,6 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icon(PhosphorIcons.info()),
                       tooltip: 'Debug Info',
                     ),
-                  IconButton(
-                    icon: Icon(PhosphorIcons.bell()),
-                    onPressed: () async {
-                      try {
-                        logger.i('Test notification button pressed');
-                        await notificationService.showTestNotification();
-                      } catch (e) {
-                        logger.e('Error in notification button press: $e');
-                        // Optionally show a snackbar or toast to the user
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Notification error: $e')),
-                        );
-                      }
-                    },
-                    tooltip: 'Test Notification',
-                  ),
                   IconButton(
                     icon: Icon(PhosphorIcons.arrowsClockwise()),
                     onPressed: _showRefreshIndicator,

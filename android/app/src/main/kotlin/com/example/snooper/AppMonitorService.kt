@@ -134,7 +134,7 @@ class AppMonitorService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("App Monitor Active")
             .setContentText("Monitoring active applications")
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setSmallIcon(R.drawable.ic_stat_name)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }

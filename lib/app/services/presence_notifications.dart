@@ -54,8 +54,6 @@ class NotificationService {
     _startMonitoring();
 
     _initialized = true;
-
-    logger.i("Notifications initialized $_initialized");
   }
 
   Future<void> _loadFriends() async {
