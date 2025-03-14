@@ -1,91 +1,3 @@
-class DiscordFriendV2 {
-  final String id;
-  final String username;
-  final String? avatarUrl;
-  bool isOnline;
-  String? currentActivity;
-  String? previousActivity;
-  DateTime? lastOnlineTime;
-  DateTime? lastStatusChangeTime;
-
-  DiscordFriendV2({
-    required this.id,
-    required this.username,
-    this.avatarUrl,
-    this.isOnline = false,
-    this.currentActivity,
-    this.previousActivity,
-    this.lastOnlineTime,
-    this.lastStatusChangeTime,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'username': username,
-      'avatarUrl': avatarUrl,
-      'isOnline': isOnline,
-      'currentActivity': currentActivity,
-      'lastOnlineTime': lastOnlineTime?.toIso8601String(),
-      'lastStatusChangeTime': lastStatusChangeTime?.toIso8601String(),
-    };
-  }
-
-  factory DiscordFriendV2.fromJson(Map<String, dynamic> json) {
-    return DiscordFriendV2(
-      id: json['id'],
-      username: json['username'],
-      avatarUrl: json['avatarUrl'],
-      isOnline: json['isOnline'] ?? false,
-      currentActivity: json['currentActivity'],
-      lastOnlineTime: json['lastOnlineTime'] != null
-          ? DateTime.parse(json['lastOnlineTime'])
-          : null,
-      lastStatusChangeTime: json['lastStatusChangeTime'] != null
-          ? DateTime.parse(json['lastStatusChangeTime'])
-          : null,
-    );
-  }
-
-  // Update friend with Lanyard data
-  void updateFromLanyard(LanyardUser lanyardUser) {
-    final wasOnline = isOnline;
-    final previousActivity = currentActivity;
-
-    isOnline = lanyardUser.online;
-
-    if (lanyardUser.activities.isNotEmpty) {
-      currentActivity = lanyardUser.activities.first.name;
-
-      final activity = lanyardUser.activities.first;
-      if (activity.details != null) {
-        currentActivity = '$currentActivity (${activity.details})';
-      } else if (activity.state != null) {
-        currentActivity = '$currentActivity (${activity.state})';
-      }
-    } else {
-      currentActivity = null;
-    }
-
-    // Track status changes
-    final now = DateTime.now();
-
-    if (wasOnline != isOnline) {
-      lastStatusChangeTime = now;
-      if (isOnline) {
-        lastOnlineTime = now;
-      }
-    }
-
-    if (isOnline && previousActivity != currentActivity) {
-      this.previousActivity = previousActivity;
-      lastStatusChangeTime = now;
-    }
-  }
-}
-
-/* models */
-
 class LanyardUser {
   final String userId;
   final String? username;
@@ -108,7 +20,19 @@ class LanyardUser {
   factory LanyardUser.fromJson(Map<String, dynamic> json) {
     final user = json['discord_user'] ?? {};
     final presence = json['discord_status'] ?? 'offline';
-    final activitiesJson = json['activities'] as List<dynamic>? ?? [];
+
+    // The activities are nested inside the 'data' object in some Lanyard API responses
+    List<dynamic> activitiesJson = [];
+
+    // Check if activities are directly in the json or in a nested 'data' object
+    if (json.containsKey('activities') && json['activities'] is List) {
+      activitiesJson = json['activities'] as List<dynamic>;
+    } else if (json.containsKey('data') &&
+        json['data'] is Map &&
+        json['data'].containsKey('activities') &&
+        json['data']['activities'] is List) {
+      activitiesJson = json['data']['activities'] as List<dynamic>;
+    }
 
     return LanyardUser(
       userId: json['discord_id'] ?? '',
@@ -124,11 +48,16 @@ class LanyardUser {
           .toList(),
     );
   }
+
+  // Debug helper to diagnose empty activities
+  String toString() {
+    return 'LanyardUser(userId: $userId, username: $username, activities.length: ${activities.length})';
+  }
 }
 
 class LanyardActivity {
   final String name;
-  final String type;
+  final int type; // Changed from String to int to match Discord's activity type
   final String? state;
   final String? details;
   final Map<String, dynamic>? assets;
@@ -142,12 +71,44 @@ class LanyardActivity {
   });
 
   factory LanyardActivity.fromJson(Map<String, dynamic> json) {
+    // Ensure we're handling null values properly
     return LanyardActivity(
       name: json['name'] ?? '',
-      type: json['type']?.toString() ?? '',
+      // Convert type to int, as Discord uses numeric activity types
+      type: json['type'] is int
+          ? json['type']
+          : int.tryParse(json['type']?.toString() ?? '0') ?? 0,
       state: json['state'],
       details: json['details'],
       assets: json['assets'] as Map<String, dynamic>?,
     );
   }
+
+  // Debug helper
+  String toString() {
+    return 'LanyardActivity(name: $name, type: $type, state: $state, details: $details)';
+  }
+}
+
+// Example usage to debug the API response
+void debugLanyardResponse(Map<String, dynamic> jsonResponse) {
+  print('Full JSON response: $jsonResponse');
+
+  // Check if activities exist directly in the response
+  if (jsonResponse.containsKey('activities')) {
+    print(
+        'Activities found directly in the response: ${jsonResponse['activities']}');
+  }
+
+  // Check if activities exist in a data object
+  if (jsonResponse.containsKey('data') &&
+      jsonResponse['data'] is Map &&
+      jsonResponse['data'].containsKey('activities')) {
+    print(
+        'Activities found in data object: ${jsonResponse['data']['activities']}');
+  }
+
+  // Create the user object
+  final user = LanyardUser.fromJson(jsonResponse);
+  print('Parsed LanyardUser: $user');
 }
