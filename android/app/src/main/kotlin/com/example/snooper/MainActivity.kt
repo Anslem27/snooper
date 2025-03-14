@@ -14,11 +14,14 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL_NAME = "utilsChannel"
+    private val BACKGROUND_CHANNEL = "com.app.snooper/background"
     private lateinit var methodChannel: MethodChannel
+    private lateinit var backgroundChannel: MethodChannel
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -43,11 +46,25 @@ class MainActivity : FlutterActivity() {
                     result.success("success")
                 }
 
+                "registerBackgroundCallback" -> {
+                    val callbackHandle = call.argument<Long>("callbackHandle")
+                    if (callbackHandle != null) {
+                        FlutterBackgroundHelper.initialize(applicationContext, callbackHandle)
+                        BackgroundNotificationWorker.schedule(applicationContext)
+                        result.success(true)
+                    } else {
+                        result.error("INVALID_ARGUMENT", "callbackHandle is required", null)
+                    }
+                }
+
                 else -> {
                     result.notImplemented()
                 }
             }
         }
+
+        backgroundChannel =
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BACKGROUND_CHANNEL)
 
         startBackgroundService()
     }
@@ -60,10 +77,16 @@ class MainActivity : FlutterActivity() {
         } else {
             startService(serviceIntent)
         }
+
+        // Also schedule the WorkManager
+        BackgroundNotificationWorker.schedule(applicationContext)
     }
 
     private fun stopBackgroundService() {
         val serviceIntent = Intent(this, BackgroundNotificationService::class.java)
         stopService(serviceIntent)
+
+        // Also cancel the WorkManager
+        BackgroundNotificationWorker.cancel(applicationContext)
     }
 }

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +15,8 @@ import 'app/services/presence_notifications.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  DartPluginRegistrant.ensureInitialized();
+/* still failed to make this run in background */
   await BackgroundServiceManager.startBackgroundService();
 
   await SharedPreferences.getInstance();

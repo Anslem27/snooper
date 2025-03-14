@@ -53,7 +53,6 @@ class NotificationService with NotificationAddOns {
 
     await _notifications.initialize(
       initSettings,
-      // Add onDidReceiveNotificationResponse callback
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         logger.d('Notification interaction: ${response.payload}');
       },
@@ -74,6 +73,15 @@ class NotificationService with NotificationAddOns {
     _startMonitoring();
 
     _initialized = true;
+  }
+
+  Future<void> reinitialize() async {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+
+    _startMonitoring();
+
+    await checkStatusNow();
   }
 
   Future<void> _loadCurrentActivities() async {
