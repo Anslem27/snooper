@@ -66,7 +66,6 @@ class ActivityRenderer extends StatelessWidget {
       );
     }
 
-    // Show offline state if no activities
     if (widgets.isEmpty) {
       widgets.add(
         OfflineActivityCard(

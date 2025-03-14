@@ -8,12 +8,9 @@ class BackgroundServiceManager {
   static const MethodChannel _backgroundChannel =
       MethodChannel('com.app.snooper/background');
 
-  // This callback will be invoked from the native side
   static void _backgroundCallback() {
-    // Initialize callback handler
     _backgroundChannel.setMethodCallHandler((call) async {
       if (call.method == 'checkStatusNow') {
-        // Call  notification service to check status
         final notificationService = NotificationService();
         await notificationService.initialize();
         await notificationService.checkStatusNow();
@@ -27,7 +24,6 @@ class BackgroundServiceManager {
     try {
       await _channel.invokeMethod('startBackgroundService');
 
-      // Register the background callback
       final callbackHandle =
           PluginUtilities.getCallbackHandle(_backgroundCallback)?.toRawHandle();
       if (callbackHandle != null) {

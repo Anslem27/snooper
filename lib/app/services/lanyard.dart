@@ -8,13 +8,9 @@ import '../models/lanyard_user.dart';
 class LanyardService {
   static const String _apiBaseUrl = 'https://api.lanyard.rest/v1';
 
-  // Singleton pattern
   static final LanyardService _instance = LanyardService._internal();
   factory LanyardService() => _instance;
   LanyardService._internal();
-
-  final Map<String, StreamController<LanyardUser>> _userControllers = {};
-  Timer? _pollingTimer;
 
   Future<LanyardUser?> getUserByRest(String userId) async {
     try {
@@ -50,68 +46,5 @@ class LanyardService {
     }
 
     return users;
-  }
-
-  Stream<LanyardUser> subscribeToUser(String userId) {
-    if (!_userControllers.containsKey(userId)) {
-      _userControllers[userId] = StreamController<LanyardUser>.broadcast();
-
-      if (_pollingTimer == null) {
-        _startPolling();
-      }
-    }
-
-    _pollUser(userId);
-
-    return _userControllers[userId]!.stream;
-  }
-
-  void _startPolling() {
-    _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(Duration(seconds: 30), (_) {
-      _pollAllUsers();
-    });
-  }
-
-  Future<void> _pollAllUsers() async {
-    if (_userControllers.isEmpty) return;
-
-    final userIds = _userControllers.keys.toList();
-    final users = await getUsersByRest(userIds);
-
-    for (final user in users) {
-      if (_userControllers.containsKey(user.userId)) {
-        _userControllers[user.userId]?.add(user);
-      }
-    }
-  }
-
-  Future<void> _pollUser(String userId) async {
-    final user = await getUserByRest(userId);
-    if (user != null && _userControllers.containsKey(userId)) {
-      _userControllers[userId]?.add(user);
-    }
-  }
-
-  void unsubscribeFromUser(String userId) {
-    if (_userControllers.containsKey(userId)) {
-      _userControllers[userId]?.close();
-      _userControllers.remove(userId);
-
-      if (_userControllers.isEmpty) {
-        _pollingTimer?.cancel();
-        _pollingTimer = null;
-      }
-    }
-  }
-
-  void dispose() {
-    _pollingTimer?.cancel();
-    _pollingTimer = null;
-
-    for (final controller in _userControllers.values) {
-      controller.close();
-    }
-    _userControllers.clear();
   }
 }

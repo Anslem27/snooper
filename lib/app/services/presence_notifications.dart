@@ -553,7 +553,6 @@ class NotificationService with NotificationAddOns {
 
   void dispose() {
     _stopMonitoring();
-    _lanyardService.dispose();
     _notificationController.close();
   }
 }

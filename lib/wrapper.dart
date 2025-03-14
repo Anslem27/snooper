@@ -3,8 +3,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:snooper/app/screens/home.dart';
 import 'package:snooper/app/screens/local_activity.dart';
 
-import 'app/services/background_service.dart';
-
 class Wrapper extends StatefulWidget {
   const Wrapper({super.key});
 
@@ -50,9 +48,9 @@ class _WrapperState extends State<Wrapper> {
     );
   }
 
-  @override
+  /* @override
   void dispose() {
     BackgroundServiceManager.stopBackgroundService();
     super.dispose();
-  }
+  } */
 }

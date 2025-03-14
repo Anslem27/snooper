@@ -16,7 +16,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   DartPluginRegistrant.ensureInitialized();
-/* still failed to make this run in background */
+  /* FIXME: still failed to make this run in background */
   await BackgroundServiceManager.startBackgroundService();
 
   await SharedPreferences.getInstance();
