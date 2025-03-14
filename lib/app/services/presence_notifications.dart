@@ -8,9 +8,9 @@ import '../models/discord_friend.dart';
 import '../models/app_notification.dart';
 import '../models/discord_friendv2.dart';
 import 'lanyard.dart';
+import 'mixins/notifications_mixin.dart';
 
-class NotificationService {
-  // Instead of storing just a single activity string, we'll store a list of activities
+class NotificationService with NotificationAddOns {
   final Map<String, List<String>> _currentActivities = {};
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -238,33 +238,27 @@ class NotificationService {
     if (!wasOnline && lanyardUser.online) {
       logger.d('Friend came online: ${friend.name}');
       _showOnlineNotification(
-          friend, currentActivities.isNotEmpty ? currentActivities[0] : null);
+          friend,
+          lanyardUser.activities.isNotEmpty
+              ? lanyardUser.activities[0].name
+              : null);
     }
 
     if (wasOnline && lanyardUser.online) {
-      // Check for added activities
       if (previousActivities != null) {
-        // Find activities that are in the current list but weren't in the previous list
-        final newActivities = currentActivities
-            .where((activity) => !previousActivities.contains(activity))
-            .toList();
-
-        // Find activities that changed position (same name but different order)
-        final unchangedActivities = currentActivities
-            .where((activity) => previousActivities.contains(activity))
-            .toList();
-
-        // Notify for each new activity
-        for (final activity in newActivities) {
-          logger.d('Friend activity added: ${friend.name} - $activity');
-          _showActivityNotification(friend, activity);
+        for (final activity in lanyardUser.activities) {
+          if (!previousActivities.contains(activity.name)) {
+            logger
+                .d('Friend activity added: ${friend.name} - ${activity.name}');
+            _showActivityNotification(friend, activity);
+          }
         }
       } else {
         // First time seeing activities for this user
-        if (currentActivities.isNotEmpty) {
+        if (lanyardUser.activities.isNotEmpty) {
           logger.d(
-              'Friend first activity: ${friend.name} - ${currentActivities[0]}');
-          _showActivityNotification(friend, currentActivities[0]);
+              'Friend first activity: ${friend.name} - ${lanyardUser.activities[0].name}');
+          _showActivityNotification(friend, lanyardUser.activities[0]);
         }
       }
     }
@@ -301,7 +295,6 @@ class NotificationService {
       message += ' playing $activity';
     }
 
-    // Create and store notification history entry
     final notification = AppNotification(
       id: '${friend.id}_online_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Friend Online',
@@ -329,7 +322,7 @@ class NotificationService {
   }
 
   Future<void> _showActivityNotification(
-      DiscordFriend friend, String activity) async {
+      DiscordFriend friend, LanyardActivity activity) async {
     const androidDetails = AndroidNotificationDetails(
       'discord_friend_activity',
       'Discord Friend Activity',
@@ -349,16 +342,16 @@ class NotificationService {
     const details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    String message = '${friend.name} is now $activity';
+    // Create a user-friendly message based on the activity type
+    String message = createFriendlyActivityMessage(friend.name, activity);
 
-    // Create and store notification history entry
     final notification = AppNotification(
       id: '${friend.id}_activity_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Friend Activity',
       message: message,
       timestamp: DateTime.now(),
       friendId: friend.id,
-      activityName: activity,
+      activityName: activity.name,
       type: NotificationType.friendActivity,
     );
 
@@ -367,11 +360,12 @@ class NotificationService {
 
     // Add notification payload
     final payload =
-        '{"friend_id": "${friend.id}", "activity": "$activity", "type": "activity"}';
+        '{"friend_id": "${friend.id}", "activity": "${activity.name}", "type": "activity"}';
 
-    logger.d('Showing activity notification for ${friend.name}: $activity');
+    logger.d(
+        'Showing activity notification for ${friend.name}: ${activity.name}');
     await _notifications.show(
-      (friend.id + activity).hashCode,
+      (friend.id + activity.name).hashCode,
       notification.title,
       notification.message,
       details,
@@ -446,6 +440,7 @@ class NotificationService {
     _notificationController.close();
   }
 }
+
 /* 
  Future<void> showTestNotification() async {
     if (!_initialized) {
