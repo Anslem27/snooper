@@ -1,3 +1,5 @@
+import 'package:snooper/app/screens/home.dart';
+
 class LanyardUser {
   final String userId;
   final String? username;
@@ -49,57 +51,47 @@ class LanyardUser {
 class LanyardActivity {
   final String name;
   final int type;
-  final String? state;
   final String? details;
+  final String? state;
+  final String? applicationId;
   final Map<String, dynamic>? assets;
+  final DateTime createdAt;
 
   LanyardActivity({
     required this.name,
     required this.type,
-    this.state,
     this.details,
+    this.state,
+    this.applicationId,
     this.assets,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   factory LanyardActivity.fromJson(Map<String, dynamic> json) {
-    // Ensure we're handling null values properly
+    DateTime? createdAt;
+    if (json['created_at'] != null) {
+      try {
+        createdAt = DateTime.parse(json['created_at']);
+      } catch (e) {
+        logger.e('Error parsing created_at for lanyard Activity: $e');
+      }
+    }
+
     return LanyardActivity(
-      name: json['name'] ?? '',
-      // Convert type to int, as Discord uses numeric activity types
-      type: json['type'] is int
-          ? json['type']
-          : int.tryParse(json['type']?.toString() ?? '0') ?? 0,
-      state: json['state'],
+      name: json['name'] ?? 'Unknown',
+      type: json['type'] ?? 0,
       details: json['details'],
-      assets: json['assets'] as Map<String, dynamic>?,
+      state: json['state'],
+      applicationId: json['application_id'],
+      assets: json['assets'] is Map
+          ? Map<String, dynamic>.from(json['assets'])
+          : null,
+      createdAt: createdAt,
     );
   }
 
-  // Debug helper
+  @override
   String toString() {
-    return 'LanyardActivity(name: $name, type: $type, state: $state, details: $details)';
+    return 'LanyardActivity(name: $name, type: $type, details: $details, state: $state)';
   }
-}
-
-// Example usage to debug the API response
-void debugLanyardResponse(Map<String, dynamic> jsonResponse) {
-  print('Full JSON response: $jsonResponse');
-
-  // Check if activities exist directly in the response
-  if (jsonResponse.containsKey('activities')) {
-    print(
-        'Activities found directly in the response: ${jsonResponse['activities']}');
-  }
-
-  // Check if activities exist in a data object
-  if (jsonResponse.containsKey('data') &&
-      jsonResponse['data'] is Map &&
-      jsonResponse['data'].containsKey('activities')) {
-    print(
-        'Activities found in data object: ${jsonResponse['data']['activities']}');
-  }
-
-  // Create the user object
-  final user = LanyardUser.fromJson(jsonResponse);
-  print('Parsed LanyardUser: $user');
 }

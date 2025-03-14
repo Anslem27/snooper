@@ -10,7 +10,8 @@ import '../models/discord_friendv2.dart';
 import 'lanyard.dart';
 
 class NotificationService {
-  final Map<String, String?> _currentActivities = {};
+  // Instead of storing just a single activity string, we'll store a list of activities
+  final Map<String, List<String>> _currentActivities = {};
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
@@ -83,7 +84,14 @@ class NotificationService {
         final Map<String, dynamic> decodedJson = json.decode(activitiesJson);
         _currentActivities.clear();
         decodedJson.forEach((key, value) {
-          _currentActivities[key] = value as String?;
+          if (value is List) {
+            _currentActivities[key] = List<String>.from(value);
+          } else if (value is String) {
+            // For backward compatibility with the old format
+            _currentActivities[key] = [value];
+          } else {
+            _currentActivities[key] = [];
+          }
         });
       } else {
         logger.d('No activities found in storage');
@@ -216,30 +224,53 @@ class NotificationService {
 
   void _processUserUpdate(DiscordFriend friend, LanyardUser lanyardUser) {
     final wasOnline = _currentActivities.containsKey(friend.id);
-    final String? previousActivity = _currentActivities[friend.id];
+    final List<String>? previousActivities = _currentActivities[friend.id];
 
-    String? currentActivity;
+    // Extract current activity names
+    List<String> currentActivities = [];
     if (lanyardUser.activities.isNotEmpty) {
-      currentActivity = lanyardUser.activities[0].name;
+      currentActivities = lanyardUser.activities.map((a) => a.name).toList();
     }
 
     logger.d(
-        'Friend update: ${friend.name} - Online: ${lanyardUser.online}, Activity: $currentActivity');
+        'Friend update: ${friend.name} - Online: ${lanyardUser.online}, Activities: ${currentActivities.join(", ")}');
 
     if (!wasOnline && lanyardUser.online) {
       logger.d('Friend came online: ${friend.name}');
-      _showOnlineNotification(friend, currentActivity);
+      _showOnlineNotification(
+          friend, currentActivities.isNotEmpty ? currentActivities[0] : null);
     }
 
-    if (wasOnline &&
-        lanyardUser.online &&
-        previousActivity != currentActivity) {
-      logger.d('Friend activity changed: ${friend.name} - $currentActivity');
-      _showActivityNotification(friend, currentActivity ?? 'online');
+    if (wasOnline && lanyardUser.online) {
+      // Check for added activities
+      if (previousActivities != null) {
+        // Find activities that are in the current list but weren't in the previous list
+        final newActivities = currentActivities
+            .where((activity) => !previousActivities.contains(activity))
+            .toList();
+
+        // Find activities that changed position (same name but different order)
+        final unchangedActivities = currentActivities
+            .where((activity) => previousActivities.contains(activity))
+            .toList();
+
+        // Notify for each new activity
+        for (final activity in newActivities) {
+          logger.d('Friend activity added: ${friend.name} - $activity');
+          _showActivityNotification(friend, activity);
+        }
+      } else {
+        // First time seeing activities for this user
+        if (currentActivities.isNotEmpty) {
+          logger.d(
+              'Friend first activity: ${friend.name} - ${currentActivities[0]}');
+          _showActivityNotification(friend, currentActivities[0]);
+        }
+      }
     }
 
     if (lanyardUser.online) {
-      _currentActivities[friend.id] = currentActivity;
+      _currentActivities[friend.id] = currentActivities;
     } else {
       _currentActivities.remove(friend.id);
     }
@@ -415,7 +446,6 @@ class NotificationService {
     _notificationController.close();
   }
 }
-
 /* 
  Future<void> showTestNotification() async {
     if (!_initialized) {
