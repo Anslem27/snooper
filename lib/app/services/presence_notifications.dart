@@ -231,6 +231,41 @@ class NotificationService with NotificationAddOns {
     }
   }
 
+  Future<void> optimizedInitialize() async {
+    // This is a lighter version of initialize() that can be called from background
+    if (_initialized) return;
+
+    const initSettingsAndroid =
+        AndroidInitializationSettings('@drawable/ic_stat_name');
+    const initSettingsIOS = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const initSettings = InitializationSettings(
+      android: initSettingsAndroid,
+      iOS: initSettingsIOS,
+    );
+
+    await _notifications.initialize(initSettings);
+
+    await _loadFriends();
+    await _loadCurrentActivities();
+
+    _initialized = true;
+  }
+
+  Future<bool> checkStatusFromBackground() async {
+    try {
+      await optimizedInitialize();
+      await _pollFriendsStatus();
+      return true;
+    } catch (e) {
+      logger.e('Error checking status from background: $e');
+      return false;
+    }
+  }
+
   void _processUserUpdate(DiscordFriend friend, LanyardUser lanyardUser) {
     final wasOnline = _currentActivities.containsKey(friend.id);
     final List<String>? previousActivities = _currentActivities[friend.id];
@@ -556,3 +591,74 @@ class NotificationService with NotificationAddOns {
     _notificationController.close();
   }
 }
+
+
+/* 
+
+  Future<void> showTestNotification() async {
+    if (!_initialized) {
+      logger.w('Attempted to show notification before initialization');
+      await initialize();
+    }
+
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+        _notifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    final bool? permissionGranted =
+        await androidPlugin?.requestNotificationsPermission();
+
+    logger.d('Notification permission granted: $permissionGranted');
+
+    const androidDetails = AndroidNotificationDetails(
+      'test_notification_channel',
+      'Test Notifications',
+      channelDescription: 'Channel for test notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: '@drawable/ic_stat_name',
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      enableLights: true,
+      enableVibration: true,
+      visibility: NotificationVisibility.public,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'default',
+    );
+
+    const details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    try {
+      final notificationId =
+          DateTime.now().millisecondsSinceEpoch.remainder(100000);
+      final message =
+          'This is a test notification sent at ${DateTime.now().toString()}';
+
+      final notification = AppNotification(
+        id: 'test_$notificationId',
+        title: 'Test Notification',
+        message: message,
+        timestamp: DateTime.now(),
+        type: NotificationType.test,
+      );
+
+      _notificationHistory.add(notification);
+      await _saveNotificationHistory();
+
+      await _notifications.show(
+        notificationId,
+        notification.title,
+        notification.message,
+        details,
+      );
+
+      logger.i('Test notification sent successfully');
+    } catch (e) {
+      logger.e('Error showing notification: $e');
+    }
+  }
+ */

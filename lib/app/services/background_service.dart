@@ -1,51 +1,114 @@
-import 'package:flutter/services.dart';
+import 'dart:async';
 import 'dart:ui';
-
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:workmanager/workmanager.dart';
 import 'package:snooper/app/services/presence_notifications.dart';
+import 'package:snooper/app/screens/home.dart';
 
 class BackgroundServiceManager {
-  static const MethodChannel _channel = MethodChannel('utilsChannel');
-  static const MethodChannel _backgroundChannel =
-      MethodChannel('com.app.snooper/background');
+  static const String workManagerTaskName = 'snooperBackgroundChecks';
+  static const Duration checkInterval = Duration(minutes: 1);
 
-  static void _backgroundCallback() {
-    _backgroundChannel.setMethodCallHandler((call) async {
-      if (call.method == 'checkStatusNow') {
-        final notificationService = NotificationService();
-        await notificationService.initialize();
-        await notificationService.checkStatusNow();
-        return true;
-      }
-      return null;
+  static Future<void> startBackgroundService() async {
+    await Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: false,
+    );
+
+    await Workmanager().registerPeriodicTask(
+      'snooperStatusCheck',
+      workManagerTaskName,
+      frequency: checkInterval,
+      constraints: Constraints(
+        networkType: NetworkType.connected,
+      ),
+      existingWorkPolicy: ExistingWorkPolicy.replace,
+      backoffPolicy: BackoffPolicy.linear,
+    );
+
+    logger.d('Background service registered to run every minute');
+  }
+
+  static Future<void> stopBackgroundService() async {
+    await Workmanager().cancelAll();
+    logger.d('Background service stopped');
+  }
+}
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((taskName, inputData) async {
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+      DartPluginRegistrant.ensureInitialized();
+
+      logger.d('Background task $taskName started');
+
+      final notificationService = NotificationService();
+      await notificationService.initialize();
+
+      await notificationService.checkStatusNow();
+
+      logger.d('Background task $taskName completed successfully');
+      return Future.value(true);
+    } catch (e) {
+      logger.e('Background task $taskName failed: $e');
+      return Future.value(false);
+    }
+  });
+}
+
+class ForegroundServiceManager {
+  static bool _isRunning = false;
+  static Timer? _timer;
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  static Future<void> startForegroundService() async {
+    if (_isRunning) return;
+
+    //  notification channel for foreground service
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'snooper_foreground_service',
+      'Snooper Service',
+      channelDescription: 'Keeps Snooper running in the background',
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: true,
+    );
+
+    const NotificationDetails notificationDetails =
+        NotificationDetails(android: androidDetails);
+
+    // Show foreground notification
+    await _notificationsPlugin.show(
+      9999,
+      'Snooper is running',
+      'Monitoring your friends\' activities',
+      notificationDetails,
+    );
+
+    // manual periodic checking
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      final notificationService = NotificationService();
+      await notificationService.checkStatusNow();
     });
+
+    _isRunning = true;
+    logger.d('Foreground service started');
   }
 
-  static Future<bool> startBackgroundService() async {
-    try {
-      await _channel.invokeMethod('startBackgroundService');
+  static Future<void> stopForegroundService() async {
+    if (!_isRunning) return;
 
-      final callbackHandle =
-          PluginUtilities.getCallbackHandle(_backgroundCallback)?.toRawHandle();
-      if (callbackHandle != null) {
-        await _channel.invokeMethod('registerBackgroundCallback', {
-          'callbackHandle': callbackHandle,
-        });
-      }
+    _timer?.cancel();
+    _timer = null;
 
-      return true;
-    } catch (e) {
-      print('Failed to start background service: $e');
-      return false;
-    }
-  }
+    await _notificationsPlugin.cancel(9999);
 
-  static Future<bool> stopBackgroundService() async {
-    try {
-      await _channel.invokeMethod('stopBackgroundService');
-      return true;
-    } catch (e) {
-      print('Failed to stop background service: $e');
-      return false;
-    }
+    _isRunning = false;
+    logger.d('Foreground service stopped');
   }
 }

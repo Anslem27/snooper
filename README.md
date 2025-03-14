@@ -49,8 +49,8 @@ You must [join this Discord server](https://discord.gg/UrXF2cfJ7F) and your pres
 ## Planned Featured
 
 - Gamification
-- Local Presence emittion
-- Summary based of lanyard data - Monthly
+<!-- - Local Presence emittion -->
+- Snapshot based of lanyard data
 - Tidy Code
 
 ## Getting Started

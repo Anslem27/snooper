@@ -39,12 +39,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <service
-            android:name=".BackgroundNotificationService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
 
         <service
             android:name="com.dexterous.flutterlocalnotifications.ForegroundService"        
@@ -52,14 +46,14 @@
             android:stopWithTask="false"
             android:foregroundServiceType="dataSync" />
 
-        <receiver
+        <!-- <receiver
             android:name=".BootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
-        </receiver>
+        </receiver> -->
 
         <receiver 
             android:exported="false" 
