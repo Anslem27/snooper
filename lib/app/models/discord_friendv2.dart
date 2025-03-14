@@ -18,28 +18,19 @@ class LanyardUser {
   });
 
   factory LanyardUser.fromJson(Map<String, dynamic> json) {
-    final user = json['discord_user'] ?? {};
+    final user = json['discord_user'] as Map<String, dynamic>? ?? {};
     final presence = json['discord_status'] ?? 'offline';
+    final data = json;
 
-    // The activities are nested inside the 'data' object in some Lanyard API responses
-    List<dynamic> activitiesJson = [];
-
-    // Check if activities are directly in the json or in a nested 'data' object
-    if (json.containsKey('activities') && json['activities'] is List) {
-      activitiesJson = json['activities'] as List<dynamic>;
-    } else if (json.containsKey('data') &&
-        json['data'] is Map &&
-        json['data'].containsKey('activities') &&
-        json['data']['activities'] is List) {
-      activitiesJson = json['data']['activities'] as List<dynamic>;
-    }
+    List<dynamic> activitiesJson =
+        data['activities'] is List ? data['activities'] as List<dynamic> : [];
 
     return LanyardUser(
-      userId: json['discord_id'] ?? '',
+      userId: user['id'] ?? 'N/A',
       username: user['username'],
       discriminator: user['discriminator'],
       avatarUrl: user['avatar'] != null
-          ? 'https://cdn.discordapp.com/avatars/${json['discord_id']}/${user['avatar']}.png'
+          ? 'https://cdn.discordapp.com/avatars/${user['id']}/${user['avatar']}.png'
           : null,
       online: presence != 'offline',
       status: presence,
@@ -49,7 +40,7 @@ class LanyardUser {
     );
   }
 
-  // Debug helper to diagnose empty activities
+  @override
   String toString() {
     return 'LanyardUser(userId: $userId, username: $username, activities.length: ${activities.length})';
   }
@@ -57,7 +48,7 @@ class LanyardUser {
 
 class LanyardActivity {
   final String name;
-  final int type; // Changed from String to int to match Discord's activity type
+  final int type;
   final String? state;
   final String? details;
   final Map<String, dynamic>? assets;

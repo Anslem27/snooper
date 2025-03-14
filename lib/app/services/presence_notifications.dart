@@ -72,7 +72,6 @@ class NotificationService {
     _startMonitoring();
 
     _initialized = true;
-    logger.d('NotificationService initialized');
   }
 
   Future<void> _loadCurrentActivities() async {
@@ -86,7 +85,6 @@ class NotificationService {
         decodedJson.forEach((key, value) {
           _currentActivities[key] = value as String?;
         });
-        logger.d('Loaded ${_currentActivities.length} activities from storage');
       } else {
         logger.d('No activities found in storage');
       }
@@ -101,7 +99,6 @@ class NotificationService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
           'current_activities', json.encode(_currentActivities));
-      logger.d('Saved ${_currentActivities.length} activities to storage');
     } catch (e) {
       logger.e('Error saving activities: $e');
     }
@@ -116,7 +113,6 @@ class NotificationService {
         final List<dynamic> decodedJson = json.decode(friendsJson);
         _friends =
             decodedJson.map((item) => DiscordFriend.fromJson(item)).toList();
-        logger.d('Loaded ${_friends.length} friends from storage');
       } else {
         logger.d('No friends found in storage');
       }
@@ -137,8 +133,6 @@ class NotificationService {
             decodedJson.map((item) => AppNotification.fromJson(item)).toList();
 
         _notificationHistory.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-        logger.d(
-            'Loaded ${_notificationHistory.length} notifications from storage');
 
         _notificationController.add(_notificationHistory);
       } else {
@@ -155,7 +149,6 @@ class NotificationService {
       final prefs = await SharedPreferences.getInstance();
       final jsonData = _notificationHistory.map((n) => n.toJson()).toList();
       await prefs.setString('notification_history', json.encode(jsonData));
-      logger.d('Saved ${_notificationHistory.length} notifications to storage');
 
       _notificationController.add(_notificationHistory);
     } catch (e) {
@@ -171,8 +164,6 @@ class NotificationService {
     });
 
     _pollFriendsStatus();
-
-    logger.d('Started monitoring ${_friends.length} friends');
   }
 
   void _stopMonitoring() {
@@ -183,8 +174,6 @@ class NotificationService {
 
     _pollingTimer?.cancel();
     _pollingTimer = null;
-
-    logger.d('Stopped monitoring');
   }
 
   Future<void> _pollFriendsStatus() async {
@@ -208,26 +197,27 @@ class NotificationService {
         final friendIndex =
             _friends.indexWhere((f) => f.id == lanyardUser.userId);
 
-        _handleUserUpdate(_friends[friendIndex], lanyardUser);
         if (friendIndex >= 0) {
-          _handleUserUpdate(_friends[friendIndex], lanyardUser);
+          _processUserUpdate(_friends[friendIndex], lanyardUser);
+        } else {
+          logger
+              .w('No matching friend found for user ID: ${lanyardUser.userId}');
         }
       }
 
-      // Save current activities after updates
+      logger
+          .d('Current activities after updates: ${_currentActivities.length}');
+
       await _saveCurrentActivities();
     } catch (e) {
       logger.e('Error polling friend status: $e');
     }
   }
 
-  void _handleUserUpdate(DiscordFriend friend, LanyardUser lanyardUser) {
-    logger.f("CALLED");
-    // Get previous state information
+  void _processUserUpdate(DiscordFriend friend, LanyardUser lanyardUser) {
     final wasOnline = _currentActivities.containsKey(friend.id);
     final String? previousActivity = _currentActivities[friend.id];
 
-    // Get current activity
     String? currentActivity;
     if (lanyardUser.activities.isNotEmpty) {
       currentActivity = lanyardUser.activities[0].name;
@@ -236,33 +226,18 @@ class NotificationService {
     logger.d(
         'Friend update: ${friend.name} - Online: ${lanyardUser.online}, Activity: $currentActivity');
 
-    // CASE 1: Friend was offline and is now online
     if (!wasOnline && lanyardUser.online) {
       logger.d('Friend came online: ${friend.name}');
       _showOnlineNotification(friend, currentActivity);
-      _currentActivities[friend.id] = currentActivity;
-      return;
     }
 
-    // CASE 2: Friend was online and is now offline
-    if (wasOnline && !lanyardUser.online) {
-      logger.d('Friend went offline: ${friend.name}');
-      // We don't show notification for going offline
-      _currentActivities.remove(friend.id);
-      return;
-    }
-
-    // CASE 3: Friend still online but activity changed
     if (wasOnline &&
         lanyardUser.online &&
         previousActivity != currentActivity) {
       logger.d('Friend activity changed: ${friend.name} - $currentActivity');
       _showActivityNotification(friend, currentActivity ?? 'online');
-      _currentActivities[friend.id] = currentActivity;
-      return;
     }
 
-    // Update the status map if online, but don't notify (no relevant change)
     if (lanyardUser.online) {
       _currentActivities[friend.id] = currentActivity;
     } else {
@@ -380,7 +355,6 @@ class NotificationService {
       final prefs = await SharedPreferences.getInstance();
       final jsonData = _friends.map((f) => f.toJson()).toList();
       await prefs.setString('discord_friends', json.encode(jsonData));
-      logger.d('Saved ${_friends.length} friends to storage');
     } catch (e) {
       logger.e('Error saving friends: $e');
     }
@@ -392,7 +366,6 @@ class NotificationService {
     }
   }
 
-  // Method to manually check status (can be called from UI)
   Future<void> checkStatusNow() async {
     logger.d('Manual status check requested');
     await _pollFriendsStatus();
@@ -442,6 +415,7 @@ class NotificationService {
     _notificationController.close();
   }
 }
+
 /* 
  Future<void> showTestNotification() async {
     if (!_initialized) {

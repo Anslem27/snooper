@@ -282,10 +282,11 @@ class _HomeScreenState extends State<HomeScreen>
     return ListView(
       padding: const EdgeInsets.all(3.0),
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5),
-          child: WeatherPill(),
-        ),
+        if (1 == 2)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5),
+            child: WeatherPill(),
+          ),
         Card(
           elevation: 0,
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
