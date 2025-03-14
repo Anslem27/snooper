@@ -41,7 +41,7 @@
         </activity>
         
         <service
-            android:name=".AppMonitorService"
+            android:name=".BackgroundNotificationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

@@ -8,6 +8,7 @@ class AppNotification {
   final String? friendId;
   final String? activityName;
   final NotificationType type;
+  final String? imageUrl;
   bool isRead;
 
   AppNotification({
@@ -18,6 +19,7 @@ class AppNotification {
     this.friendId,
     this.activityName,
     required this.type,
+    this.imageUrl,
     this.isRead = false,
   });
 
@@ -30,6 +32,7 @@ class AppNotification {
       'friendId': friendId,
       'activityName': activityName,
       'type': type.index,
+      'imageUrl': imageUrl,
       'isRead': isRead,
     };
   }
@@ -42,7 +45,8 @@ class AppNotification {
       timestamp: DateTime.fromMillisecondsSinceEpoch(json['timestamp']),
       friendId: json['friendId'],
       activityName: json['activityName'],
-      type: NotificationType.values[json['type']],
+      type: NotificationType.values[json['type'] ?? 0],
+      imageUrl: json['imageUrl'],
       isRead: json['isRead'] ?? false,
     );
   }

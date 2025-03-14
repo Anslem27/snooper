@@ -3,9 +3,11 @@ package com.app.snooper
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Process
 import android.provider.Settings
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -14,13 +16,10 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL_NAME = "utilsChannel"
     private lateinit var methodChannel: MethodChannel
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
-
-        AppMonitorService.setMethodChannel(methodChannel)
-
         methodChannel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "showNativeAndroidToast" -> {
@@ -34,28 +33,14 @@ class MainActivity : FlutterActivity() {
                     result.success("success")
                 }
 
-                "startAppMonitorService" -> {
-                    if (hasUsageStatsPermission()) {
-                        startAppMonitorService()
-                        result.success(true)
-                    } else {
-                        requestUsageStatsPermission()
-                        result.success(false)
-                    }
+                "startBackgroundService" -> {
+                    startBackgroundService()
+                    result.success("success")
                 }
 
-                "stopAppMonitorService" -> {
-                    stopAppMonitorService()
-                    result.success(true)
-                }
-
-                "checkUsageStatsPermission" -> {
-                    result.success(hasUsageStatsPermission())
-                }
-
-                "requestUsageStatsPermission" -> {
-                    requestUsageStatsPermission()
-                    result.success(true)
+                "stopBackgroundService" -> {
+                    stopBackgroundService()
+                    result.success("success")
                 }
 
                 else -> {
@@ -63,42 +48,22 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+
+        startBackgroundService()
     }
 
-    private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(),
-                packageName
-            )
-        } else {
-            appOps.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                Process.myUid(),
-                packageName
-            )
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
-
-    private fun requestUsageStatsPermission() {
-        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-        startActivity(intent)
-    }
-
-    private fun startAppMonitorService() {
-        val serviceIntent = Intent(this, AppMonitorService::class.java)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun startBackgroundService() {
+        val serviceIntent = Intent(this, BackgroundNotificationService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
         } else {
             startService(serviceIntent)
         }
     }
 
-    private fun stopAppMonitorService() {
-        val serviceIntent = Intent(this, AppMonitorService::class.java)
+    private fun stopBackgroundService() {
+        val serviceIntent = Intent(this, BackgroundNotificationService::class.java)
         stopService(serviceIntent)
     }
 }

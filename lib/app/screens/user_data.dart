@@ -6,6 +6,11 @@ import 'package:http/http.dart' as http;
 import 'package:snooper/app/screens/home.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/* 
+TODO: 
+lets modify the pref, to also capture the date we stored the data If date is null for an existing one handle for migrating the old implementation to the current day. 
+also an option to download the data to the phones downloads directory folder and also on the import an option to pick from a selected part where they have the folder.
+ */
 class AllYourDataPage extends StatefulWidget {
   const AllYourDataPage({super.key});
 

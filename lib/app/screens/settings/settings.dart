@@ -647,7 +647,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       onTap: () async {
                         try {
                           logger.i('Test notification button pressed');
-                          // await notificationService.showTestNotification();
+                          await notificationService.showTestNotification();
                         } catch (e) {
                           logger.e('Error in notification button press: $e');
                           // Optionally show a snackbar or toast to the user

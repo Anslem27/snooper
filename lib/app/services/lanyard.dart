@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:snooper/app/screens/home.dart';
 
-import '../models/discord_friendv2.dart';
+import '../models/lanyard_user.dart';
 
 class LanyardService {
   static const String _apiBaseUrl = 'https://api.lanyard.rest/v1';

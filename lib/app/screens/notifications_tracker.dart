@@ -21,15 +21,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
     _loadNotifications();
     _notificationService.notificationsStream.listen((notifications) {
       setState(() {
-        _notifications = notifications;
+        _notifications = _sortNotifications(notifications);
       });
     });
   }
 
   void _loadNotifications() {
     setState(() {
-      _notifications = _notificationService.getNotifications();
+      _notifications =
+          _sortNotifications(_notificationService.getNotifications());
     });
+  }
+
+  List<AppNotification> _sortNotifications(
+      List<AppNotification> notifications) {
+    final sortedNotifications = List<AppNotification>.from(notifications);
+
+    sortedNotifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return sortedNotifications;
   }
 
   @override
@@ -179,12 +189,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       ),
                       direction: DismissDirection.endToStart,
                       onDismissed: (_) async {
-                        // Remove the notification locally
                         setState(() {
                           _notifications.removeAt(index);
                         });
 
-                        // Update the notification service's list
                         final currentNotifications =
                             _notificationService.getNotifications();
                         currentNotifications
@@ -193,6 +201,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         // Trigger a save
                         await _notificationService
                             .markNotificationAsRead(notification.id);
+
+                        setState(() {});
                       },
                       child: Card(
                         margin: const EdgeInsets.symmetric(
@@ -285,14 +295,102 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        _formatTimestamp(
-                                            notification.timestamp),
-                                        style:
-                                            theme.textTheme.bodySmall?.copyWith(
-                                          color: colorScheme.outline,
-                                        ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            _formatTimestamp(
+                                                notification.timestamp),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                              color: colorScheme.outline,
+                                            ),
+                                          ),
+                                          if (notification.activityName != null)
+                                            Chip(
+                                              label: Text(
+                                                notification.activityName!,
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color: colorScheme
+                                                      .onSecondaryContainer,
+                                                ),
+                                              ),
+                                              backgroundColor: colorScheme
+                                                  .secondaryContainer,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 4),
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                              visualDensity:
+                                                  VisualDensity.compact,
+                                            ),
+                                        ],
                                       ),
+                                      // Display image if available
+                                      if (notification.imageUrl != null)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 12),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            child: Image.network(
+                                              notification.imageUrl!,
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                              height: 180,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Container(
+                                                  width: double.infinity,
+                                                  height: 120,
+                                                  color: colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons
+                                                          .broken_image_rounded,
+                                                      color: colorScheme
+                                                          .onSurfaceVariant,
+                                                      size: 32,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              loadingBuilder: (context, child,
+                                                  loadingProgress) {
+                                                if (loadingProgress == null) {
+                                                  return child;
+                                                }
+                                                return Container(
+                                                  width: double.infinity,
+                                                  height: 120,
+                                                  color: colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      value: loadingProgress
+                                                                  .expectedTotalBytes !=
+                                                              null
+                                                          ? loadingProgress
+                                                                  .cumulativeBytesLoaded /
+                                                              loadingProgress
+                                                                  .expectedTotalBytes!
+                                                          : null,
+                                                      color:
+                                                          colorScheme.primary,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),

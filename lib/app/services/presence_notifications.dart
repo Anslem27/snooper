@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:snooper/app/screens/home.dart';
 
 import '../models/discord_friend.dart';
 import '../models/app_notification.dart';
-import '../models/discord_friendv2.dart';
+import '../models/lanyard_user.dart';
 import 'lanyard.dart';
 import 'mixins/notifications_mixin.dart';
 
@@ -323,26 +324,58 @@ class NotificationService with NotificationAddOns {
 
   Future<void> _showActivityNotification(
       DiscordFriend friend, LanyardActivity activity) async {
-    const androidDetails = AndroidNotificationDetails(
-      'discord_friend_activity',
-      'Discord Friend Activity',
-      channelDescription:
-          'Notifications when Discord friends start new activities',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-      icon: '@drawable/ic_stat_name',
-    );
+    final String? imageUrl = getActivityImageUrl(activity);
+
+    AndroidNotificationDetails androidDetails =
+        getStyledNotificationDetails(activity);
+
+    // If we have an image URL, enhance the notification with BigPictureStyle
+    if (imageUrl != null) {
+      try {
+        final http.Response response = await http.get(Uri.parse(imageUrl));
+
+        if (response.statusCode == 200) {
+          final ByteArrayAndroidBitmap bigPicture =
+              ByteArrayAndroidBitmap(response.bodyBytes);
+          final ByteArrayAndroidBitmap largeIcon =
+              ByteArrayAndroidBitmap(response.bodyBytes);
+
+          androidDetails = AndroidNotificationDetails(
+            androidDetails.channelId,
+            androidDetails.channelName,
+            channelDescription: androidDetails.channelDescription,
+            importance: androidDetails.importance,
+            priority: androidDetails.priority,
+            icon: androidDetails.icon,
+            color: androidDetails.color,
+            styleInformation: BigPictureStyleInformation(
+              bigPicture,
+              largeIcon: largeIcon,
+              contentTitle: activity.name,
+              summaryText: activity.details,
+              htmlFormatContent: true,
+              htmlFormatContentTitle: true,
+              htmlFormatSummaryText: true,
+            ),
+          );
+        } else {
+          logger.w('Failed to download image: ${response.statusCode}');
+        }
+      } catch (e) {
+        logger.e('Error downloading image for notification: $e');
+      }
+    }
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      attachments: [],
     );
 
-    const details =
+    final details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    // Create a user-friendly message based on the activity type
     String message = createFriendlyActivityMessage(friend.name, activity);
 
     final notification = AppNotification(
@@ -353,14 +386,23 @@ class NotificationService with NotificationAddOns {
       friendId: friend.id,
       activityName: activity.name,
       type: NotificationType.friendActivity,
+      imageUrl: imageUrl,
     );
 
     _notificationHistory.add(notification);
     await _saveNotificationHistory();
 
-    // Add notification payload
-    final payload =
-        '{"friend_id": "${friend.id}", "activity": "${activity.name}", "type": "activity"}';
+    final Map<String, dynamic> payloadData = {
+      "friend_id": friend.id,
+      "activity": activity.name,
+      "type": "activity",
+    };
+
+    if (imageUrl != null) {
+      payloadData["image_url"] = imageUrl;
+    }
+
+    final payload = json.encode(payloadData);
 
     logger.d(
         'Showing activity notification for ${friend.name}: ${activity.name}');
@@ -434,15 +476,7 @@ class NotificationService with NotificationAddOns {
     await _saveNotificationHistory();
   }
 
-  void dispose() {
-    _stopMonitoring();
-    _lanyardService.dispose();
-    _notificationController.close();
-  }
-}
-
-/* 
- Future<void> showTestNotification() async {
+  Future<void> showTestNotification() async {
     if (!_initialized) {
       logger.w('Attempted to show notification before initialization');
       await initialize();
@@ -508,4 +542,10 @@ class NotificationService with NotificationAddOns {
       logger.e('Error showing notification: $e');
     }
   }
- */
+
+  void dispose() {
+    _stopMonitoring();
+    _lanyardService.dispose();
+    _notificationController.close();
+  }
+}

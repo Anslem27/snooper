@@ -6,7 +6,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:snooper/app/helpers/native_calls.dart';
 import 'package:snooper/app/widgets/activity_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:snooper/app/widgets/weather_pill.dart';
 import 'dart:convert';
 import '../helpers/logger.dart';
 import '../models/discord_friend.dart';
@@ -282,11 +281,6 @@ class _HomeScreenState extends State<HomeScreen>
     return ListView(
       padding: const EdgeInsets.all(3.0),
       children: [
-        if (1 == 2)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 5),
-            child: WeatherPill(),
-          ),
         Card(
           elevation: 0,
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
