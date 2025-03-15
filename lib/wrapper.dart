@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:snooper/app/screens/home.dart';
-import 'package:snooper/app/screens/local_activity.dart';
+
+import 'app/screens/notifications_tracker.dart';
+import 'app/widgets/notifications_btn.dart';
 
 class Wrapper extends StatefulWidget {
   const Wrapper({super.key});
@@ -18,7 +19,7 @@ class _WrapperState extends State<Wrapper> {
     super.initState();
   }
 
-  List<Widget> pages = [HomeScreen(), const LocalActivity()];
+  List<Widget> pages = [HomeScreen(), const NotificationsPage()];
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +39,10 @@ class _WrapperState extends State<Wrapper> {
             label: 'Presence',
           ),
           NavigationDestination(
-            selectedIcon: Icon(PhosphorIcons.circlesThreePlus()),
-            icon: Icon(PhosphorIconsLight.circlesThreePlus),
-            label: 'Local Activity',
+            selectedIcon:
+                NotificationIconWithBAdge(isActive: (currentPageIndex == 1)),
+            icon: NotificationIconWithBAdge(isActive: (currentPageIndex == 0)),
+            label: 'Notifications',
           ),
         ],
       ),

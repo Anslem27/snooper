@@ -54,8 +54,6 @@ void main() async {
     backoffPolicy: BackoffPolicy.linear,
   );
 
-  // For more frequent checks (every minute), we'll use a foreground service
-  // when the app is running
   await SharedPreferences.getInstance();
 
   final notificationService = NotificationService();

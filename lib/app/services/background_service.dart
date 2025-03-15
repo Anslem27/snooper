@@ -9,11 +9,47 @@ import 'package:snooper/app/screens/home.dart';
 class BackgroundServiceManager {
   static const String workManagerTaskName = 'snooperBackgroundChecks';
   static const Duration checkInterval = Duration(minutes: 1);
+  static final FlutterLocalNotificationsPlugin _debugNotifications =
+      FlutterLocalNotificationsPlugin();
+
+  static Future<void> initializeDebugNotifications() async {
+    const initSettingsAndroid =
+        AndroidInitializationSettings('@drawable/ic_stat_name');
+    const initSettingsIOS = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(
+      android: initSettingsAndroid,
+      iOS: initSettingsIOS,
+    );
+
+    await _debugNotifications.initialize(initSettings);
+  }
+
+  static Future<void> showDebugNotification(String title, String body) async {
+    const androidDetails = AndroidNotificationDetails(
+      'debug_notifications',
+      'Debug Notifications',
+      channelDescription: 'Notifications for debugging service execution',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@drawable/ic_stat_name',
+    );
+
+    const iosDetails = DarwinNotificationDetails();
+    const details =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    final id = DateTime.now().millisecondsSinceEpoch % 10000;
+    await _debugNotifications.show(id, title, body, details);
+  }
 
   static Future<void> startBackgroundService() async {
+    await initializeDebugNotifications();
+    await showDebugNotification(
+        'Background Service', 'Attempting to register background task');
+
     await Workmanager().initialize(
       callbackDispatcher,
-      isInDebugMode: false,
+      isInDebugMode: true,
     );
 
     await Workmanager().registerPeriodicTask(
@@ -25,13 +61,17 @@ class BackgroundServiceManager {
       ),
       existingWorkPolicy: ExistingWorkPolicy.replace,
       backoffPolicy: BackoffPolicy.linear,
+      initialDelay: Duration(seconds: 10),
     );
 
+    await showDebugNotification(
+        'Background Service', 'Task registered successfully');
     logger.d('Background service registered to run every minute');
   }
 
   static Future<void> stopBackgroundService() async {
     await Workmanager().cancelAll();
+    await showDebugNotification('Background Service', 'Tasks cancelled');
     logger.d('Background service stopped');
   }
 }
@@ -43,6 +83,12 @@ void callbackDispatcher() {
       WidgetsFlutterBinding.ensureInitialized();
       DartPluginRegistrant.ensureInitialized();
 
+      // Initialize debug notifications inside the callback
+      await BackgroundServiceManager.initializeDebugNotifications();
+      await BackgroundServiceManager.showDebugNotification(
+          'Background Task Running',
+          'Task $taskName started at ${DateTime.now().toString()}');
+
       logger.d('Background task $taskName started');
 
       final notificationService = NotificationService();
@@ -50,9 +96,17 @@ void callbackDispatcher() {
 
       await notificationService.checkStatusNow();
 
+      await BackgroundServiceManager.showDebugNotification(
+          'Background Task Complete',
+          'Task $taskName completed at ${DateTime.now().toString()}');
+
       logger.d('Background task $taskName completed successfully');
       return Future.value(true);
     } catch (e) {
+      await BackgroundServiceManager.initializeDebugNotifications();
+      await BackgroundServiceManager.showDebugNotification(
+          'Background Task Failed', 'Error: $e');
+
       logger.e('Background task $taskName failed: $e');
       return Future.value(false);
     }
@@ -64,11 +118,16 @@ class ForegroundServiceManager {
   static Timer? _timer;
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  // static int _debugCounter = 0;
 
   static Future<void> startForegroundService() async {
     if (_isRunning) return;
 
-    //  notification channel for foreground service
+    // Initialize and show debug notification
+    await BackgroundServiceManager.initializeDebugNotifications();
+    await BackgroundServiceManager.showDebugNotification(
+        'Foreground Service', 'Starting foreground service');
+
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'snooper_foreground_service',
@@ -90,11 +149,21 @@ class ForegroundServiceManager {
       notificationDetails,
     );
 
-    // manual periodic checking
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) async {
-      final notificationService = NotificationService();
-      await notificationService.checkStatusNow();
-    });
+    // Manual periodic checking
+    // _timer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+    //   try {
+    //     _debugCounter++;
+    //     await BackgroundServiceManager.showDebugNotification(
+    //         'Foreground Timer Tick',
+    //         'Count: $_debugCounter - ${DateTime.now().toString()}');
+
+    //     final notificationService = NotificationService();
+    //     await notificationService.checkStatusNow();
+    //   } catch (e) {
+    //     await BackgroundServiceManager.showDebugNotification(
+    //         'Foreground Timer Error', 'Error: $e');
+    //   }
+    // });
 
     _isRunning = true;
     logger.d('Foreground service started');
@@ -107,6 +176,9 @@ class ForegroundServiceManager {
     _timer = null;
 
     await _notificationsPlugin.cancel(9999);
+
+    await BackgroundServiceManager.showDebugNotification(
+        'Foreground Service', 'Foreground service stopped');
 
     _isRunning = false;
     logger.d('Foreground service stopped');

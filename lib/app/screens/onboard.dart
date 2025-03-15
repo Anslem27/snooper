@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 
 class DiscordOnboardingScreen extends StatefulWidget {
@@ -187,10 +188,13 @@ class _DiscordOnboardingScreenState extends State<DiscordOnboardingScreen> {
             color: Theme.of(context).colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(50),
           ),
-          child: Icon(
-            Icons.discord,
-            size: 60,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          child: SvgPicture.asset(
+            'assets/branding/transparent_small.svg',
+            // height: 20,
+            colorFilter: ColorFilter.mode(
+              Theme.of(context).colorScheme.primary,
+              BlendMode.srcIn,
+            ),
           ),
         ),
         const SizedBox(height: 24),

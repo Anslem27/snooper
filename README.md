@@ -11,7 +11,7 @@
 
 # Snooper
 
-Check your Discord activity and check on your friend's as well.
+A material focused flutter app to check your Discord activity and check on your friend's as well.
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
@@ -23,6 +23,8 @@ Check your Discord activity and check on your friend's as well.
 ## Features
 
 #### Data storage
+
+read more [here](https://)
 
 ```
 THE NULL POINTER
@@ -42,7 +44,7 @@ retention = min_age + (min_age - max_age) * pow((file_size / max_size - 1), 3)
 
 You must [join this Discord server](https://discord.gg/UrXF2cfJ7F) and your presence will available with your id in the app, snooper utilized the lanyard api i.e `GET api.lanyard.rest/v1/users/:your_id`. Too easy !
 
-<!-- - **Notofications**: Get to know when your pals are online. -->
+<!-- - **Notifications**: Get to know when your pals are online. -->
 
 - **More tools coming soon!**
 
@@ -51,7 +53,10 @@ You must [join this Discord server](https://discord.gg/UrXF2cfJ7F) and your pres
 - Gamification
 <!-- - Local Presence emittion -->
 - Snapshot based of lanyard data
+- Improve background notifications.
+- Localizations
 - Tidy Code
+- Bug squash frenzy and neccesary fixes.
 
 ## Getting Started
 
@@ -78,12 +83,22 @@ This project is a starting point for a Flutter application. To run the project o
 
 <div style="overflow-x: auto; white-space: nowrap;">
 
-<img src="assets/screenshots/flutter_01.png" width="15%" alt=""/>
-<img src="assets/screenshots/flutter_02.png" width="15%" alt=""/>
-<img src="assets/screenshots/flutter_03.png" width="15%" alt=""/>
-<img src="assets/screenshots/flutter_04.png" width="15%" alt=""/>
-<img src="assets/screenshots/flutter_05.png" width="15%" alt=""/>
-<!-- <img src="assets/screenshots/flutter_06.png"width="15%" alt=""/> -->
+<img src="assets/screenshots/flutter_01.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_02.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_03.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_04.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_05.png" width="18%" alt=""/>
+
+<img src="assets/screenshots/flutter_06.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_07.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_08.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_09.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_10.png" width="18%" alt=""/>
+
+<img src="assets/screenshots/flutter_11.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_12.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_13.png" width="18%" alt=""/>
+<img src="assets/screenshots/flutter_14.png" width="18%" alt=""/>
 
 </div>
 

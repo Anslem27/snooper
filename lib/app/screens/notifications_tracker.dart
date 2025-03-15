@@ -52,7 +52,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       appBar: AppBar(
         title: const Text('Notifications'),
         scrolledUnderElevation: 0,
-        centerTitle: true,
         actions: [
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert_rounded, color: colorScheme.onSurface),
@@ -144,7 +143,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             )
           : ListView.builder(
-              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: _notifications.length,
               itemBuilder: (context, index) {
