@@ -55,6 +55,7 @@ class NotificationService with NotificationAddOns {
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         logger.d('Notification interaction: ${response.payload}');
+        // mark it as read.
       },
     );
 
@@ -505,6 +506,7 @@ class NotificationService with NotificationAddOns {
     await _saveNotificationHistory();
   }
 
+  /* delete */
   Future<void> removeNotification(String notificationId) async {
     final index =
         _notificationHistory.indexWhere((n) => n.id == notificationId);

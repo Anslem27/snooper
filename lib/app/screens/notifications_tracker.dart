@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -187,20 +188,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       ),
                       direction: DismissDirection.endToStart,
                       onDismissed: (_) async {
-                        setState(() {
-                          _notifications.removeAt(index);
-                        });
-
-                        final currentNotifications =
-                            _notificationService.getNotifications();
-                        currentNotifications
-                            .removeWhere((n) => n.id == notification.id);
-
-                        // Trigger a save
                         await _notificationService
                             .markNotificationAsRead(notification.id);
 
-                        setState(() {});
+                        await _notificationService
+                            .removeNotification(notification.id);
+
+                        setState(() {
+                          _notifications.removeAt(index);
+                        });
                       },
                       child: Card(
                         margin: const EdgeInsets.symmetric(
@@ -336,14 +332,49 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                           child: ClipRRect(
                                             borderRadius:
                                                 BorderRadius.circular(12),
-                                            child: Image.network(
-                                              notification.imageUrl!,
-                                              fit: BoxFit.cover,
-                                              width: double.infinity,
-                                              height: 180,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                return Container(
+                                            child: InkWell(
+                                              onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => Dialog(
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              6),
+                                                      child: InteractiveViewer(
+                                                        child:
+                                                            CachedNetworkImage(
+                                                          imageUrl: notification
+                                                              .imageUrl!,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: CachedNetworkImage(
+                                                imageUrl:
+                                                    notification.imageUrl!,
+                                                fit: BoxFit.cover,
+                                                width: double.infinity,
+                                                height: 180,
+                                                placeholder: (context, url) =>
+                                                    Container(
+                                                  width: double.infinity,
+                                                  height: 120,
+                                                  color: colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color:
+                                                          colorScheme.primary,
+                                                    ),
+                                                  ),
+                                                ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        Container(
                                                   width: double.infinity,
                                                   height: 120,
                                                   color: colorScheme
@@ -357,35 +388,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                                       size: 32,
                                                     ),
                                                   ),
-                                                );
-                                              },
-                                              loadingBuilder: (context, child,
-                                                  loadingProgress) {
-                                                if (loadingProgress == null) {
-                                                  return child;
-                                                }
-                                                return Container(
-                                                  width: double.infinity,
-                                                  height: 120,
-                                                  color: colorScheme
-                                                      .surfaceContainerHighest,
-                                                  child: Center(
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                      value: loadingProgress
-                                                                  .expectedTotalBytes !=
-                                                              null
-                                                          ? loadingProgress
-                                                                  .cumulativeBytesLoaded /
-                                                              loadingProgress
-                                                                  .expectedTotalBytes!
-                                                          : null,
-                                                      color:
-                                                          colorScheme.primary,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),

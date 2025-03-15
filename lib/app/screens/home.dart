@@ -203,21 +203,21 @@ class _HomeScreenState extends State<HomeScreen>
                 pinned: true,
                 scrolledUnderElevation: 0,
                 actions: [
-                  if (kDebugMode)
-                    IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DiscordOnboardingScreen(
-                              onUserIdSubmitted: (id) {},
-                            ),
-                          ),
-                        );
-                      },
-                      icon: Icon(PhosphorIcons.info()),
-                      tooltip: 'Debug Info',
-                    ),
+                  // if (kDebugMode)
+                  //   IconButton(
+                  //     onPressed: () {
+                  //       Navigator.push(
+                  //         context,
+                  //         MaterialPageRoute(
+                  //           builder: (_) => DiscordOnboardingScreen(
+                  //             onUserIdSubmitted: (id) {},
+                  //           ),
+                  //         ),
+                  //       );
+                  //     },
+                  //     icon: Icon(PhosphorIcons.info()),
+                  //     tooltip: 'Debug Info',
+                  //   ),
                   // IconButton(
                   //   icon: Icon(PhosphorIcons.arrowsClockwise()),
                   //   onPressed: _showRefreshIndicator,
