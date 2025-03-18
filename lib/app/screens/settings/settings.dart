@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
@@ -325,18 +326,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 SettingsTile(
                   child: ListTile(
-                    title: const Text('Logs'),
-                    leading: Icon(PhosphorIcons.log()),
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => LogsPage()));
-                    },
-                  ),
-                ),
-                SettingsTile(
-                  child: ListTile(
-                    title: const Text('Your data'),
-                    leading: Icon(PhosphorIcons.database()),
+                    title: const Text('Backup'),
+                    subtitle:
+                        Text("Make a cloud backup of your data and settings."),
+                    leading: Icon(PhosphorIcons.cloud()),
                     onTap: () {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (_) => AllYourDataPage()));
@@ -345,7 +338,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 SettingsTile(
                   child: ListTile(
-                    title: const Text('Export data - From Lanyard'),
+                    title: const Text('Your data'),
+                    subtitle: Text("Json from Lanyard"),
                     leading: Icon(PhosphorIcons.export()),
                     onTap: () async {
                       final prefs = await SharedPreferences.getInstance();
@@ -380,6 +374,17 @@ class _SettingsPageState extends State<SettingsPage> {
                           ],
                         ),
                       );
+                    },
+                  ),
+                ),
+                SettingsTile(
+                  child: ListTile(
+                    title: const Text('Logs'),
+                    subtitle: Text("Find the source of the issue."),
+                    leading: Icon(PhosphorIcons.log()),
+                    onTap: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => LogsPage()));
                     },
                   ),
                 ),
@@ -459,6 +464,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 SettingsTile(
                   child: ListTile(
                     title: const Text('Export as Json'),
+                    subtitle: Text("Create local save for your friend's id's."),
                     leading: Icon(PhosphorIcons.export()),
                     onTap: () async {
                       final friendsJson =
@@ -511,6 +517,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 SettingsTile(
                   child: ListTile(
                     title: const Text('Seed for development'),
+                    subtitle: Text("Fill database with sample ids."),
                     leading: Icon(PhosphorIcons.pottedPlant()),
                     onTap: () async {
                       final shouldSeed = await showDialog<bool>(
@@ -562,6 +569,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 SettingsTile(
                   child: ListTile(
                     title: const Text('Import from Json'),
+                    subtitle: Text("Import from local backup you made."),
                     leading: Icon(PhosphorIcons.bracketsCurly()),
                     onTap: () async {
                       final directory = await getDownloadsDirectory();
@@ -662,7 +670,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
             // Notifications
             SettingsGroup(
-              title: 'Notifications',
+              title: 'Notifications - BETA',
               icon: Icons.notifications,
               children: [
                 SettingsTile(
@@ -833,10 +841,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         context: context,
                         applicationName: 'Snooper',
                         applicationVersion: appVersion,
-                        applicationIcon: Icon(
-                          Icons.discord,
-                          color: colorScheme.primary,
-                          size: 48,
+                        applicationIcon: SvgPicture.asset(
+                          'assets/branding/transparent_small.svg',
+                          height: 48,
+                          colorFilter: ColorFilter.mode(
+                            Theme.of(context).colorScheme.primary,
+                            BlendMode.srcIn,
+                          ),
                         ),
                         children: [
                           const Text(

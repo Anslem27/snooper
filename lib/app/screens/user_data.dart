@@ -1,16 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:snooper/app/screens/home.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/* 
-TODO: 
-lets modify the pref, to also capture the date we stored the data If date is null for an existing one handle for migrating the old implementation to the current day. 
-also an option to download the data to the phones downloads directory folder and also on the import an option to pick from a selected part where they have the folder.
- */
+
 class AllYourDataPage extends StatefulWidget {
   const AllYourDataPage({super.key});
 
@@ -23,11 +24,13 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
   bool _isLoading = true;
   bool _isUploading = false;
   String? _backupUrl;
+  DateTime? _backupDate;
   final TextEditingController _urlController = TextEditingController();
 
   // add notifications when retention period is near
   ///* readMore here [https://0x0.st/?ref=public_apis&utm_medium=website]
   static const String _backupUrlKey = 'backup_url';
+  static const String _backupDateKey = 'backup_date';
   static const String _nullPointerUrl = 'https://0x0.st';
 
   @override
@@ -52,10 +55,31 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
       data[key] = prefs.get(key);
     }
 
+    // Get backup date or set to current date if null (for migration)
+    String? backupDateStr = prefs.getString(_backupDateKey);
+    DateTime? backupDate;
+    if (backupDateStr != null) {
+      backupDate = DateTime.tryParse(backupDateStr);
+    }
+
     setState(() {
       _prefsData = data;
       _backupUrl = prefs.getString(_backupUrlKey);
+      _backupDate = backupDate;
       _isLoading = false;
+    });
+
+    // Migration: If we have a backup URL but no date, set current date
+    if (_backupUrl != null && backupDate == null) {
+      _updateBackupDate(DateTime.now());
+    }
+  }
+
+  Future<void> _updateBackupDate(DateTime date) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_backupDateKey, date.toIso8601String());
+    setState(() {
+      _backupDate = date;
     });
   }
 
@@ -72,7 +96,6 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
 
       var request = http.MultipartRequest('POST', Uri.parse(_nullPointerUrl));
 
-      // for avoiding looking like a hijacked device response
       request.headers.addAll({
         'User-Agent': 'Flutter App/1.0',
         'Accept': '*/*',
@@ -91,8 +114,13 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
         final SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString(_backupUrlKey, url);
 
+        // Save backup date
+        DateTime now = DateTime.now();
+        await prefs.setString(_backupDateKey, now.toIso8601String());
+
         setState(() {
           _backupUrl = url;
+          _backupDate = now;
         });
 
         _showSnackBar('Backup successful!');
@@ -103,6 +131,75 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
       _showSnackBar('Error uploading: $e');
     } finally {
       setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _downloadToDevice() async {
+    if (_prefsData.isEmpty) {
+      _showSnackBar('No data to download');
+      return;
+    }
+
+    var status = await Permission.storage.request();
+    if (!status.isGranted) {
+      _showSnackBar('Storage permission is required to download');
+      return;
+    }
+
+    try {
+      final String jsonData = jsonEncode(_prefsData);
+
+      // Get downloads directory
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Download');
+        // Make sure the directory exists
+        if (!await directory.exists()) {
+          directory = await getExternalStorageDirectory();
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      if (directory == null) {
+        _showSnackBar('Could not access download directory');
+        return;
+      }
+
+      // Create filename with timestamp
+      String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      String filePath = '${directory.path}/snooper_backup_$timestamp.json';
+
+      // Write to file
+      final File file = File(filePath);
+      await file.writeAsString(jsonData);
+
+      _showSnackBar('Data saved to: $filePath');
+    } catch (e) {
+      _showSnackBar('Error saving file: $e');
+      logger.e('Error saving file: $e');
+    }
+  }
+
+  Future<void> _importFromFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      String filePath = result.files.single.path!;
+      File file = File(filePath);
+      String jsonData = await file.readAsString();
+
+      await _processImportedData(jsonData);
+    } catch (e) {
+      _showSnackBar('Error importing from file: $e');
+      logger.e('Error importing from file: $e');
     }
   }
 
@@ -126,37 +223,7 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
       logger.e(response.body);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> importedData = jsonDecode(response.body);
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-        await prefs.clear();
-
-        // Import all the data
-        for (var entry in importedData.entries) {
-          final key = entry.key;
-          final value = entry.value;
-
-          if (value is String) {
-            await prefs.setString(key, value);
-          } else if (value is int) {
-            await prefs.setInt(key, value);
-          } else if (value is double) {
-            await prefs.setDouble(key, value);
-          } else if (value is bool) {
-            await prefs.setBool(key, value);
-          } else if (value is List<String>) {
-            await prefs.setStringList(key, value.cast<String>());
-          }
-        }
-
-        // Save the backup URL
-        await prefs.setString(_backupUrlKey, _urlController.text);
-        setState(() {
-          _backupUrl = _urlController.text;
-        });
-
-        _loadPrefs();
-        _showSnackBar('Data imported successfully!');
+        await _processImportedData(response.body, fromUrl: _urlController.text);
       } else {
         _showSnackBar('Error: ${response.statusCode}');
         setState(() => _isLoading = false);
@@ -168,76 +235,59 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
     }
   }
 
+  Future<void> _processImportedData(String jsonData, {String? fromUrl}) async {
+    try {
+      final Map<String, dynamic> importedData = jsonDecode(jsonData);
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      await prefs.clear();
+
+      // Import all the data
+      for (var entry in importedData.entries) {
+        final key = entry.key;
+        final value = entry.value;
+
+        if (value is String) {
+          await prefs.setString(key, value);
+        } else if (value is int) {
+          await prefs.setInt(key, value);
+        } else if (value is double) {
+          await prefs.setDouble(key, value);
+        } else if (value is bool) {
+          await prefs.setBool(key, value);
+        } else if (value is List<String>) {
+          await prefs.setStringList(key, value.cast<String>());
+        }
+      }
+
+      // Save the backup URL if it came from URL
+      if (fromUrl != null) {
+        await prefs.setString(_backupUrlKey, fromUrl);
+        setState(() {
+          _backupUrl = fromUrl;
+        });
+      }
+
+      DateTime now = DateTime.now();
+      await prefs.setString(_backupDateKey, now.toIso8601String());
+      setState(() {
+        _backupDate = now;
+      });
+
+      _loadPrefs();
+      _showSnackBar('Data imported successfully!');
+    } catch (e) {
+      _showSnackBar('Error processing imported data: $e');
+      logger.e('Error processing imported data: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
   void _copyUrlToClipboard() {
     if (_backupUrl != null) {
       Clipboard.setData(ClipboardData(text: _backupUrl!));
       _showSnackBar('URL copied to clipboard');
     }
-  }
-
-  void _showBackupInfoSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'About Null Pointer Backup',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Your data is backed up using the Null Pointer service, a temporary file hosting service.',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'File Retention:',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '• Files are stored for at least 30 days\n'
-                '• Maximum storage time is 1 year\n'
-                '• Actual retention depends on file size\n'
-                '• Smaller files are kept longer',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Important:',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '• Save your backup URL in a safe place\n'
-                '• Anyone with your URL can access your data\n'
-                '• Create a new backup regularly\n'
-                '• This is not a permanent backup solution',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              // read more here
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void _showImportDialog() {
@@ -256,6 +306,22 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
                 hintText: 'https://0x0.st/xxxx',
               ),
             ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Or'),
+              ],
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.folder_open),
+              label: const Text('Select File'),
+              onPressed: () {
+                Navigator.pop(context);
+                _importFromFile();
+              },
+            ),
           ],
         ),
         actions: [
@@ -268,9 +334,79 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
               Navigator.pop(context);
               _importFromUrl();
             },
-            child: const Text('Import'),
+            child: const Text('Import from URL'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackupUrlCard() {
+    if (_backupUrl == null) return const SizedBox.shrink();
+
+    String dateText = 'Unknown date';
+    if (_backupDate != null) {
+      dateText = DateFormat('MMM dd, yyyy HH:mm').format(_backupDate!);
+    }
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.backup),
+                const SizedBox(width: 8),
+                Text(
+                  'Your Backup Link',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.content_copy),
+                  onPressed: _copyUrlToClipboard,
+                  tooltip: 'Copy URL',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.open_in_new),
+                  onPressed: () {
+                    if (_backupUrl != null) {
+                      launchUrl(Uri.parse(_backupUrl!));
+                    }
+                  },
+                  tooltip: 'Open URL',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _backupUrl!,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    fontFamily: 'monospace',
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.calendar_today,
+                    size: 16, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 4),
+                Text(
+                  'Backup created: $dateText',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Keep this link safe! Your data will be available for at least 30 days.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -343,8 +479,8 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
                             String key = _prefsData.keys.elementAt(index);
                             dynamic value = _prefsData[key];
 
-                            // Skip showing the backup URL in the list
-                            if (key == _backupUrlKey) {
+                            // Skip showing the backup URL and date in the list
+                            if (key == _backupUrlKey || key == _backupDateKey) {
                               return const SizedBox.shrink();
                             }
 
@@ -389,6 +525,13 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
           ),
           const SizedBox(height: 8),
           FloatingActionButton.extended(
+            heroTag: 'download',
+            onPressed: _downloadToDevice,
+            icon: const Icon(Icons.save_alt),
+            label: const Text('Download'),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton.extended(
             heroTag: 'backup',
             onPressed: _isUploading ? null : _backupData,
             icon: _isUploading
@@ -401,60 +544,6 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
             label: Text(_isUploading ? 'Uploading...' : 'Backup'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBackupUrlCard() {
-    if (_backupUrl == null) return const SizedBox.shrink();
-
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.backup),
-                const SizedBox(width: 8),
-                Text(
-                  'Your Backup Link',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.content_copy),
-                  onPressed: _copyUrlToClipboard,
-                  tooltip: 'Copy URL',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.open_in_new),
-                  onPressed: () {
-                    if (_backupUrl != null) {
-                      launchUrl(Uri.parse(_backupUrl!));
-                    }
-                  },
-                  tooltip: 'Open URL',
-                ),
-                // reset the prefs to the default
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _backupUrl!,
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    fontFamily: 'monospace',
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Keep this link safe! Your data will be available for at least 30 days.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -551,6 +640,71 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
           ),
         );
       },
+    );
+  }
+
+  void _showBackupInfoSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'About Null Pointer Backup',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Your data is backed up using the Null Pointer service, a temporary file hosting service.',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'File Retention:',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '• Files are stored for at least 30 days\n'
+                '• Maximum storage time is 1 year\n'
+                '• Actual retention depends on file size\n'
+                '• Smaller files are kept longer',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Important:',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '• Save your backup URL in a safe place\n'
+                '• Anyone with your URL can access your data\n'
+                '• Create a new backup regularly\n'
+                '• This is not a permanent backup solution',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              // read more here
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

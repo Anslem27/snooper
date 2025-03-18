@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:snooper/app/screens/home.dart';
 import 'app/screens/notifications_tracker.dart';
@@ -34,7 +35,14 @@ class _WrapperState extends State<Wrapper> {
         icon: Icons.discord_outlined,
         selectedIcon: Icons.discord,
         label: 'Presence',
-        customWidget: null,
+        customWidget: SvgPicture.asset(
+          'assets/branding/transparent_small.svg',
+          height: 24,
+          colorFilter: ColorFilter.mode(
+            Theme.of(context).colorScheme.primary,
+            BlendMode.srcIn,
+          ),
+        ),
       ),
       NavItemWidget(
         icon: Icons.notifications_outlined,
