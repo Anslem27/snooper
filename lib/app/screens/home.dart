@@ -223,14 +223,6 @@ class _HomeScreenState extends State<HomeScreen>
                   //   onPressed: _showRefreshIndicator,
                   //   tooltip: 'Refresh',
                   // ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, "/settings");
-                    },
-                    icon: Icon(PhosphorIcons.gearFine()),
-                    tooltip: 'Settings',
-                  ),
-                  const SizedBox(width: 8),
                 ],
                 bottom: TabBar(
                   controller: _tabController,
@@ -310,9 +302,7 @@ class _HomeScreenState extends State<HomeScreen>
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        FriendsManagement(
-          onFriendsChanged: _handleFriendsChanged,
-        ),
+        FriendsManagement(onFriendsChanged: _handleFriendsChanged),
         const SizedBox(height: 24),
         if (_friends.isNotEmpty) ...[
           Padding(

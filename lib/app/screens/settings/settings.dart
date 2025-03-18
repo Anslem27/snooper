@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:snooper/app/providers/theme_provider.dart';
 import 'package:snooper/app/screens/home.dart';
 import 'package:snooper/app/screens/logs.dart';
+import 'package:snooper/app/screens/settings/about_snooper.dart';
 
 import '../../models/discord_friend.dart';
 import '../../models/settings_elements.dart';
@@ -38,6 +40,9 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _showStatusChanges = true;
   bool _showGameChanges = true;
 
+  String appVersion = "";
+  String buildNumber = "";
+
   NativeCalls nativeCalls = NativeCalls();
   final notificationService = NotificationService();
 
@@ -45,6 +50,15 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _loadPreferences();
+    _getAppInfo();
+  }
+
+  Future<void> _getAppInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      appVersion = packageInfo.version;
+      buildNumber = packageInfo.buildNumber;
+    });
   }
 
   Future<void> _loadPreferences() async {
@@ -131,6 +145,7 @@ class _SettingsPageState extends State<SettingsPage> {
               child: const Text('Save'),
               onPressed: () {
                 themeProvider.setCustomColor(pickerColor);
+                setState(() {});
                 Navigator.of(context).pop();
               },
             ),
@@ -495,6 +510,57 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 SettingsTile(
                   child: ListTile(
+                    title: const Text('Seed for development'),
+                    leading: Icon(PhosphorIcons.pottedPlant()),
+                    onTap: () async {
+                      final shouldSeed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Seed Friends List'),
+                          content: const Text(
+                              'Are you sure you want to seed the friends list? This may overwrite existing data.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Seed'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (shouldSeed!) {
+                        try {
+                          final friendsJson = await rootBundle
+                              .loadString('assets/seed/friend_seeds.json');
+                          final friendsList =
+                              (json.decode(friendsJson) as List);
+
+                          setState(() {
+                            for (var friendJson in friendsList) {
+                              final friend = DiscordFriend.fromJson(friendJson);
+                              if (!_friends.any((f) => f.id == friend.id)) {
+                                _friends.add(friend);
+                              }
+                            }
+                          });
+                          _saveFriends();
+                          nativeCalls.showNativeAndroidToast(
+                              "Friends list seeded", 100);
+                        } catch (e) {
+                          nativeCalls.showNativeAndroidToast(
+                              "Failed to seed list", 100);
+                          logger.e("Cant seed friends list $e");
+                        }
+                      }
+                    },
+                  ),
+                ),
+                SettingsTile(
+                  child: ListTile(
                     title: const Text('Import from Json'),
                     leading: Icon(PhosphorIcons.bracketsCurly()),
                     onTap: () async {
@@ -747,15 +813,26 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 SettingsTile(
                   child: ListTile(
-                    title: const Text('About Snooper'),
+                    title: const Text('About'),
                     subtitle: const Text(
-                        'Track your Discord activity and share it with friends'),
+                        'Learn more about the project and how you can contribute.'),
                     leading: const Icon(Icons.discord),
+                    onTap: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => AboutPage()));
+                    },
+                  ),
+                ),
+                SettingsTile(
+                  child: ListTile(
+                    title: const Text('Opensource Licences'),
+                    subtitle: Text("Tools we use"),
+                    leading: const Icon(Icons.privacy_tip),
                     onTap: () {
                       showAboutDialog(
                         context: context,
                         applicationName: 'Snooper',
-                        applicationVersion: '1.0.0',
+                        applicationVersion: appVersion,
                         applicationIcon: Icon(
                           Icons.discord,
                           color: colorScheme.primary,
@@ -771,20 +848,20 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   ),
                 ),
-                SettingsTile(
-                  child: ListTile(
-                    title: const Text('Privacy Policy'),
-                    leading: const Icon(Icons.privacy_tip),
-                    onTap: () {},
-                  ),
-                ),
-                SettingsTile(
-                  child: ListTile(
-                    title: const Text('Terms of Service'),
-                    leading: const Icon(Icons.gavel),
-                    onTap: () {},
-                  ),
-                ),
+                // SettingsTile(
+                //   child: ListTile(
+                //     title: const Text('Privacy Policy'),
+                //     leading: const Icon(Icons.privacy_tip),
+                //     onTap: () {},
+                //   ),
+                // ),
+                // SettingsTile(
+                //   child: ListTile(
+                //     title: const Text('Terms of Service'),
+                //     leading: const Icon(Icons.gavel),
+                //     onTap: () {},
+                //   ),
+                // ),
               ],
             ),
 

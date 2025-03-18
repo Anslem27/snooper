@@ -1,0 +1,56 @@
+# Snooper Changelog
+
+## 17/03/2025
+# v1.2.1
+- chore:
+   - 47e10c6: base commit
+   - 53000af: wip
+   - 6ac1d45: wip
+   - 355fab5: wip
+   - 709d85a: wip
+   - 18f0f17: wip
+   - 76a00f4: wip
+   - 989234b: wip
+   - 5d01bb9: wip
+   - 659eb2f: wip
+   - f585ed1: wip
+   - df39bf2: update dependencies, general ui and ux
+   - 77f171c: updated readme
+   - f441b44: wip
+   - b47dd30: remove old launcher icons and add adaptive icons; update app routes and permissions
+   - 066f841: wip
+   - 112133e: wip
+   - 1108c3f: wip
+   - 82296d1: wip
+   - ef2fd77: wip
+   - e26bc23: wip
+   - 9e99a9d: wip
+   - a586e35: notifications attempt background runs
+   - 29fe39d: clean up
+   - a586d90: wip
+   - a866afe: updated README.md
+   - 4a3a1ce: bump version to 1.2.1
+- feat:
+   - e1621e8: add Discord user settings and activity display components
+   - 3a55367: add custom Logger; split discord friend and log entry models, enhance error handling, and add persistent logging
+   - d522544: implement native Android toast functionality, improve settings UI components, and refactor theme provider
+   - 1ecaaca: AnimatedSizeAndFade widget for smooth transitions and restructure components to utilize more of the material design system
+   - 031153a: wip
+   - c2ebbb8: use tab bar for home
+   - 2f09c7a: get android app icons in local activity
+   - 7bc5c05: notifications
+   - 95cc190: addmore  notifications features ; user data export functionality; update version and dependencies
+   - 2a06eee: user update ntfns
+   - ee47d2c: update version and refactor background service implementation and logic
+   - 6f0e06c: update version, remove unused background services; switch to workmanager and pragma injections for notifications ; clean up documentation
+   - 038cfa6: enhance notifications handling; use cached network image for notification img ; improve image loading experience
+- fix:
+   - 01dda38: notification fixes
+- service):
+   - 400e9f0: fix null ptr file service; more actions required to improve it
+- fuck:
+   - adb2f79: ntfs arent working yet
+- feat(notifications):
+   - 587525e: clean up notification logics
+- chore(feats):
+   - 0e4be9d: wip

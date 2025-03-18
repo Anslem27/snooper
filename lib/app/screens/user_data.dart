@@ -115,13 +115,20 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.get(Uri.parse(_urlController.text));
+      final response = await http.get(
+        Uri.parse(_urlController.text),
+        headers: {
+          'User-Agent': 'Flutter App/1.0',
+          'Accept': '*/*',
+        },
+      );
+
+      logger.e(response.body);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> importedData = jsonDecode(response.body);
         final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-        // Clear existing prefs first
         await prefs.clear();
 
         // Import all the data
@@ -156,6 +163,7 @@ class _AllYourDataPageState extends State<AllYourDataPage> {
       }
     } catch (e) {
       _showSnackBar('Error importing data: $e');
+      logger.e('Error importing data: $e');
       setState(() => _isLoading = false);
     }
   }

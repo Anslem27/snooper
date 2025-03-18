@@ -14,6 +14,7 @@ class NotificationIconWithBAdge extends StatefulWidget {
 
 class _NotificationIconWithBAdgeState extends State<NotificationIconWithBAdge> {
   final NotificationService _notificationService = NotificationService();
+
   int _unreadCount = 0;
 
   @override
@@ -30,19 +31,27 @@ class _NotificationIconWithBAdgeState extends State<NotificationIconWithBAdge> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Badge(
       isLabelVisible: _unreadCount > 0,
       label: Text(
         _unreadCount > 99 ? '99+' : _unreadCount.toString(),
         style: const TextStyle(
           fontSize: 10,
-          color: Colors.white,
+          // color: Colors.white,
           fontWeight: FontWeight.bold,
         ),
       ),
-      child: Icon(widget.isActive
-          ? PhosphorIconsFill.bellRinging
-          : PhosphorIconsLight.bellRinging),
+      child: Icon(
+        widget.isActive
+            ? PhosphorIconsFill.bellRinging
+            : PhosphorIconsLight.bellRinging,
+        color: widget.isActive
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant,
+        size: 24,
+      ),
     );
   }
 }

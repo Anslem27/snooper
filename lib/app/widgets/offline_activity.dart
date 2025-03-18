@@ -22,26 +22,44 @@ class OfflineActivityCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: avatarUrl,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                errorWidget: (context, url, error) {
-                  return Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurple.withAlpha(25),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.discord,
-                      color: Colors.deepPurple,
-                      size: 24,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(50),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => Dialog(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: InteractiveViewer(
+                          child: CachedNetworkImage(
+                            imageUrl: avatarUrl,
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },
+                child: CachedNetworkImage(
+                  imageUrl: avatarUrl,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  errorWidget: (context, url, error) {
+                    return Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple.withAlpha(25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.discord,
+                        color: Colors.deepPurple,
+                        size: 24,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(width: 16),

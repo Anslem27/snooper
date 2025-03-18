@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:snooper/wrapper.dart';
@@ -59,26 +60,28 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.initialize();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider<SnooperThemeProvider>(
-          create: (_) => SnooperThemeProvider(),
-        ),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  /* for now as i only support mobile */
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((value) => runApp(
+            MultiProvider(
+              providers: [
+                ChangeNotifierProvider<SnooperThemeProvider>(
+                  create: (_) => SnooperThemeProvider(),
+                ),
+              ],
+              child: const SnooperApp(),
+            ),
+          ));
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class SnooperApp extends StatefulWidget {
+  const SnooperApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<SnooperApp> createState() => _SnooperAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _SnooperAppState extends State<SnooperApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -130,8 +133,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ColorScheme darkColorScheme = darkDynamic.harmonized();
               if (themeProvider.amoledDark) {
                 darkColorScheme = darkColorScheme.copyWith(
-                  surface: const Color.fromARGB(255, 42, 26, 26),
+                  surface: const Color.fromARGB(255, 0, 0, 0),
                   surfaceContainerHighest: const Color(0xFF121212),
+                  surfaceContainer: const Color.fromARGB(255, 0, 0, 0),
+                  
                 );
               }
 

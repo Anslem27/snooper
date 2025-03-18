@@ -1,0 +1,47 @@
+🎉 New Features:
+   • add Discord user settings and activity display components
+   • add custom Logger; split discord friend and log entry models, enhance error handling, and add persistent logging
+   • implement native Android toast functionality, improve settings UI components, and refactor theme provider
+   • AnimatedSizeAndFade widget for smooth transitions and restructure components to utilize more of the material design system
+   • wip
+   • use tab bar for home
+   • get android app icons in local activity
+   • notifications
+   • addmore  notifications features ; user data export functionality; update version and dependencies
+   • user update ntfns
+   • update version and refactor background service implementation and logic
+   • update version, remove unused background services; switch to workmanager and pragma injections for notifications ; clean up documentation
+   • enhance notifications handling; use cached network image for notification img ; improve image loading experience
+
+🛠️ Bug fixes & Improvements:
+- chore:
+   • base commit
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • update dependencies, general ui and ux
+   • updated readme
+   • wip
+   • remove old launcher icons and add adaptive icons; update app routes and permissions
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • wip
+   • notifications attempt background runs
+   • clean up
+   • wip
+   • updated README.md
+   • bump version to 1.2.1
+
+- fix:
+   • notification fixes

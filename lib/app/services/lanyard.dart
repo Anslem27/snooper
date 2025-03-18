@@ -30,6 +30,7 @@ class LanyardService {
   }
 
   Future<List<LanyardUser>> getUsersByRest(List<String> userIds) async {
+    // TODO: use the multi one
     if (userIds.isEmpty) return [];
 
     List<LanyardUser> users = [];
